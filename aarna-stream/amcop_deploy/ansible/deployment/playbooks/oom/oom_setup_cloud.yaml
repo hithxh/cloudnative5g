@@ -1,0 +1,71 @@
+- name: Clone OOM GIT Repo and Delete charts
+  shell: |
+    if [ {{oom_branch}} != "" ]
+    then
+      git clone http://gerrit.onap.org/r/oom --recurse -submodules -b {{oom_branch}}
+    else
+      git clone http://gerrit.onap.org/r/oom --recurse -submodules
+    fi
+    cd oom/kubernetes
+    cp -R ./helm/plugins/ ~/.helm
+    rm -rf cds/charts/cds-command-executor/
+    rm -rf sdc/charts/sdc-dcae-be/
+    rm -rf sdc/charts/sdc-dcae-dt/
+    rm -rf sdc/charts/sdc-dcae-fe/
+    rm -rf sdc/charts/sdc-dcae-tosca-lab/
+    rm -rf sdc/charts/sdc-wfd-be/
+    rm -rf sdc/charts/sdc-wfd-fe/
+    rm -rf so/charts/so-openstack-adapter/
+    rm -rf so/charts/so-sdnc-adapter/
+    rm -rf so/charts/so-vfc-adapter/
+    rm -rf so/charts/so-vnfm-adapter/
+    rm -rf so/charts/so-ve-vnfm-adapter/
+    rm -rf multicloud/charts/multicloud-pike
+    rm -rf multicloud/charts/multicloud-azure
+    rm -rf multicloud/charts/multicloud-windriver
+    rm -rf multicloud/charts/multicloud-prometheus
+    rm -rf multicloud/charts/multicloud-vio
+    rm -rf multiccloud/charts/multicloud-fcaps
+    rm -rf multicloud/charts/multicloud-starlingx/
+
+- name: Setup local helm Repo
+  shell: helm repo add local http://127.0.0.1:8879
+
+- name: Build a local Helm repository
+  shell: cd /home/{{jump_host_user}}/oom/kubernetes; make SKIP_LINT=TRUE all
+
+- name: Copy alite_oom_override.yaml file
+  copy:
+    src: "{{ override_file }}"
+    dest: "$HOME/{{oom_override_file_dest}}"
+    mode: "755"
+    owner: "{{jump_host_user}}"
+  when: oom_override_file != ""
+
+- name: Restart Tiller
+  shell: |
+     pod_name=$(echo $(kubectl get pod -n kube-system | grep tiller-deploy | awk '{print $1}'))
+     kubectl delete pod "${pod_name}" -n kube-system
+  register: til_output
+- debug: var=til_output.stdout_lines
+
+- name: Sleep for 1 minute
+  wait_for:
+     delay: 60
+
+- name: Install helm packages
+  become: yes
+  become_method: sudo
+  shell: |
+    cd /home/{{jump_host_user}}/oom/kubernetes;
+    if [ {{oom_override_file}} != "" ]
+    then
+       echo "helm deploy with override file"
+       helm deploy dev local/onap --namespace onap -f  alite_oom_override.yaml -f onap/resources/environments/public-cloud.yaml --set global.masterPassword=onap --verbose --timeout 2000 
+    else
+       echo "helm deploy without override file"
+       helm deploy dev local/onap --namespace onap -f onap/resources/environments/public-cloud.yaml --set global.masterPassword=onap --verbose --timeout 2000 
+    fi
+  register: dep_output
+- debug: var=dep_output.stdout_lines
+

@@ -1,0 +1,40 @@
+# oauth service
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauthproxy-service 
+  labels:
+    app: oauth
+spec:
+  selector:
+    app: oauth 
+  type: NodePort
+  ports:
+  - name: http
+    port: 8090 
+    nodePort: 30775 
+    protocol: TCP
+    targetPort: 8090 
+---
+# Orchestrator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth 
+  template:
+    metadata:
+      labels:
+        app: oauth 
+    spec:
+      containers:
+        - name: oauth 
+          image: myregistrydomain.com:443/oproxy:1.0.7 
+          imagePullPolicy: Always
+          command: ["java", "-jar", "oauthproxy-1.0-SNAPSHOT.jar"] 
+          ports:
+          - containerPort: 8090 

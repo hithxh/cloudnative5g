@@ -1,0 +1,8 @@
+{
+    "cloud-region": "CLOUD_REGION",
+    "profile-name": "PROFILE_NAME",
+    "rb-name":"RESOURCE_BUNDLE_NAME",
+    "rb-version":"RESOURCE_BUNDLE_VERSION",
+    "labels": {
+    }
+}

@@ -1,0 +1,7 @@
+- name: Amcop Persistant Volume 
+  shell: |
+    cd {{operator_folder}}
+    kubectl apply -f 03-amcop-installer-with-persistent-volume.yaml
+  register: cr_out
+- debug: var=cr_out.stdout_lines
+

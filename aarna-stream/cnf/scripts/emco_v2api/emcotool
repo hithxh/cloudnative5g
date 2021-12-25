@@ -1,0 +1,551 @@
+#!/bin/bash
+
+FILE=$(realpath $0)
+CUR_DIR=$(dirname $FILE)
+
+source _functions.sh
+source test.env
+
+# This is for running from Ubuntu 18
+export PATH=$PATH:/snap/bin/
+
+# TODO consider demo of cluster label based placement
+#      could use to onboard multiple clusters for vfw
+#      but still deploy to just 1 cluster based on label
+labelname="LabelA"
+labeldata="$(cat<<EOF
+{"label-name": "$labelname"}
+EOF
+)"
+
+# define networks and providernetworks intents to ncm for the clusters
+#      define emco-private-net and unprotexted-private-net as provider networks
+
+emcoprovidernetworkname="emco-private-net"
+#      extended to multiple clusters
+emcoprovidernetworkdata="$(cat<<EOF
+{
+  "metadata": {
+    "name": "$emcoprovidernetworkname",
+    "description": "description of $emcoprovidernetworkname",
+    "userData1": "user data 1 for $emcoprovidernetworkname",
+    "userData2": "user data 2 for $emcoprovidernetworkname"
+  },
+  "spec": {
+      "cniType": "ovn4nfv",
+      "ipv4Subnets": [
+          {
+              "subnet": "10.10.20.0/24",
+              "name": "subnet1",
+              "gateway":  "10.10.20.1/24"
+          }
+      ],
+      "providerNetType": "VLAN",
+      "vlan": {
+          "vlanId": "102",
+          "providerInterfaceName": "eth1",
+          "logicalInterfaceName": "eth1.102",
+          "vlanNodeSelector": "specific",
+          "nodeLabelList": [
+              "kubernetes.io/hostname=localhost"
+          ]
+      }
+  }
+}
+EOF
+)"
+
+unprotectedprovidernetworkname="unprotected-private-net"
+unprotectedprovidernetworkdata="$(cat<<EOF
+{
+  "metadata": {
+    "name": "$unprotectedprovidernetworkname",
+    "description": "description of $unprotectedprovidernetworkname",
+    "userData1": "user data 2 for $unprotectedprovidernetworkname",
+    "userData2": "user data 2 for $unprotectedprovidernetworkname"
+  },
+  "spec": {
+      "cniType": "ovn4nfv",
+      "ipv4Subnets": [
+          {
+              "subnet": "192.168.10.0/24",
+              "name": "subnet1",
+              "gateway":  "192.168.10.1/24"
+          }
+      ],
+      "providerNetType": "VLAN",
+      "vlan": {
+          "vlanId": "100",
+          "providerInterfaceName": "eth1",
+          "logicalInterfaceName": "eth1.100",
+          "vlanNodeSelector": "specific",
+          "nodeLabelList": [
+              "kubernetes.io/hostname=localhost"
+          ]
+      }
+  }
+}
+EOF
+)"
+
+protectednetworkname="protected-private-net"
+protectednetworkdata="$(cat<<EOF
+{
+  "metadata": {
+    "name": "$protectednetworkname",
+    "description": "description of $protectednetworkname",
+    "userData1": "user data 1 for $protectednetworkname",
+    "userData2": "user data 1 for $protectednetworkname"
+  },
+  "spec": {
+      "cniType": "ovn4nfv",
+      "ipv4Subnets": [
+          {
+              "subnet": "192.168.20.0/24",
+              "name": "subnet1",
+              "gateway":  "192.168.20.100/32"
+          }
+      ]
+  }
+}
+EOF
+)"
+
+function createController {
+    controller_name=$1
+    json_file=$2
+    if [ ! -f $json_file ] || [ -z "$json_file" ]
+      then
+        echo "file not found $json_file, exiting..."
+        exit 1
+    fi
+    mkdir -p templates/TEMP
+    CTRLER_JSON="templates/TEMP/${controller_name}.json"
+    cp $json_file $CTRLER_JSON
+    if  ! grep -q "priority" $json_file
+      then
+        sed -i "s/RSYNCCTRLRNAME/${controller_name}/g" $CTRLER_JSON
+    else
+	sed -i "s/OVNACTIONCTRLNAME/${controller_name}/g" $CTRLER_JSON
+    fi
+    print_msg "creating controller entries"
+
+    call_api -d @${CTRLER_JSON} "${base_url_orchestrator}/controllers"
+}
+
+
+function createProject {
+    projectname=$1
+    projectdata="$(cat<<EOF
+    {
+     "metadata": {
+          "name": "$projectname",
+          "description": "description of $projectname controller",
+          "userData1": "$projectname user data 1",
+          "userData2": "$projectname user data 2"
+         }
+    }
+EOF
+)"
+   print_msg "creating project entry"
+   call_api -d "${projectdata}" "${base_url_orchestrator}/projects"
+}
+
+function createService {
+    project_name=$1
+    ini_file=$2
+    
+    if [ ! -f $ini_file ]
+       then
+         echo "file not found $ini_file"
+         exit 1
+    fi
+   ./generate_json.sh $ini_file > servicemeta.json
+   helm_charts=$(crudini --get --format=ini $ini_file application helm_files | awk -F "=" '{print $2}' | jq '.[]' | tr '\n"' ' ')
+   count=1
+   for helm_chart in ${helm_charts[@]}
+   do
+     curl_idata+="-F file${count}=@${helm_chart} "
+     count=$(($count + 1))
+   done
+   packetgen_profile_targz="$CUR_DIR/../../payload/profile.tar.gz"
+   call_api -F 'servicePayload=<./servicemeta.json;type=application/json' $curl_idata -F file=@"${packetgen_profile_targz}" -X POST "${base_url_middleend}/deploy"
+    }
+
+function getService {
+    project_name=$1
+    service_name=$2
+    version=$3
+    if [ $# -eq 1 ]
+       then
+         call_api_nox "${base_url_orchestrator}/projects/${project_name}/composite-apps"
+    else
+         call_api_nox "${base_url_middleend}/projects/${project_name}/composite-apps/${service_name}/${version}"
+    fi
+    }
+
+function getProject {
+    projectname=$1
+    if [ -z "$projectname" ]
+       then
+	 call_api_nox "${base_url_orchestrator}/projects"
+    else 
+	 call_api_nox "${base_url_orchestrator}/projects/${projectname}"
+    fi
+    }
+
+function getController {
+    controllername=$1
+    if [ -z $controllername ]
+       then
+	 call_api_nox "${base_url_orchestrator}/controllers"
+    else
+	 call_api_nox "${base_url_orchestrator}/controllers/${controllername}"
+    fi
+    }
+
+function deleteDIG {
+    project_name=$1
+    service_name=$2
+    version=$3
+    delete_resource "${base_url_middleend}/projects/${project_name}/composite-apps/${service_name}/${version}/dig"
+    }
+
+function deleteService {
+    project_name=$1
+    service_name=$2
+    version=$3
+    delete_resource "${base_url_middleend}/projects/${project_name}/composite-apps/${service_name}/${version}"
+    }
+
+function deleteController {
+    controller_name=$1
+    delete_resource "${base_url_orchestrator}/controllers/${controller_name}"
+    }
+
+function deleteProject {
+    project_name=$1
+    delete_resource "${base_url_orchestrator}/projects/${project_name}"
+    }
+
+function createCluster {
+    clustername=$1
+    clusterprovidername=$2
+    clusterproviderdata="$(cat<<EOF
+    {
+      "metadata": {
+           "name": "$clusterprovidername",
+           "description": "description of $clusterprovidername",
+           "userData1": "$clusterprovidername user data 1",
+           "userData2": "$clusterprovidername user data 2"
+	    }
+    }
+EOF
+)"
+    clusterdata="$(cat<<EOF
+    {
+      "metadata": {
+           "name": "$clustername",
+           "description": "description of $clustername",
+           "userData1": "$clustername user data 1",
+           "userData2": "$clustername user data 2"
+            }
+    }
+EOF
+)"
+    kubeconfigfile=$CUR_DIR/templates/edge_k8s_config
+    print_msg "Creating cluster provider and cluster"
+    call_api -d "${clusterproviderdata}" "${base_url_clm}/cluster-providers"
+    call_api -H "Content-Type: multipart/form-data" -F "metadata=$clusterdata" -F "file=@$kubeconfigfile" "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters"
+    call_api -d "${labeldata}" "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/labels"
+
+    print_msg "Creating provider network and network intents"
+    call_api -d "${emcoprovidernetworkdata}" "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks"
+    call_api -d "${unprotectedprovidernetworkdata}" "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks"
+    call_api -d "${protectednetworkdata}" "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/networks"
+
+}
+
+function getCluster {
+    clusterprovidername=$1
+    clustername=$2
+    if [ $# -eq 1 ]
+       then    
+         call_api_nox -H "Accept: application/json" "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters" 
+    elif [ $# -eq 2 ]
+       then
+	 call_api_nox -H "Accept: application/json" "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters/${clustername}"
+         call_api_nox "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/labels/${labelname}"
+	 call_api_nox "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks/${emcoprovidernetworkname}"
+	 call_api_nox "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks/${unprotectedprovidernetworkname}"
+	 call_api_nox "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/networks/${protectednetworkname}"
+    else
+	call_api_nox "${base_url_clm}/cluster-providers" 
+    fi
+}
+
+function getDig {
+    projectname=$1
+    servicename=$2
+    version=$3
+    call_api_nox "${base_url_orchestrator}/projects/${projectname}/composite-apps/${servicename}/${version}/deployment-intent-groups"
+}
+
+function deleteCluster {
+    clustername=$1
+    clusterprovidername=$2
+    delete_resource "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/networks/${protectednetworkname}"
+    delete_resource "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks/${unprotectedprovidernetworkname}"
+    delete_resource "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/provider-networks/${emcoprovidernetworkname}"
+    delete_resource "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/labels/${labelname}"
+    delete_resource "${base_url_clm}/cluster-providers/${clusterprovidername}/clusters/${clustername}"
+    delete_resource "${base_url_clm}/cluster-providers/${clusterprovidername}"
+}
+
+function instantiateDig {
+    projectname=$1
+    servicename=$2
+    version=$3
+    deployment_intent_group_name=$4
+    call_api -d "{ }" "${base_url_orchestrator}/projects/${projectname}/composite-apps/${servicename}/${version}/deployment-intent-groups/${deployment_intent_group_name}/approve"
+    call_api -d "{ }" "${base_url_orchestrator}/projects/${projectname}/composite-apps/${servicename}/${version}/deployment-intent-groups/${deployment_intent_group_name}/instantiate"
+}
+
+
+# apply the network and providernetwork to an appcontext and instantiate with rsync
+function applyNcmData {
+    call_api -d "{ }" "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/apply"
+}
+
+# deletes the network resources from the clusters and the associated appcontext entries
+function terminateNcmData {
+    call_api -d "{ }" "${base_url_ncm}/cluster-providers/${clusterprovidername}/clusters/${clustername}/terminate"
+}
+
+function var_check() {
+    arg_value=$1
+    if [ -z "$arg_value" ]
+      then
+        usage
+        exit 1
+    fi
+}
+
+function usage {
+    echo -e "EMCO Management tool\n"
+    echo -e "Usage: $0  [create|get|delete|instantiate] [OPTIONS]\n"
+    echo -e "create Options:\n"
+    echo "controller --name <controllername> --metadata <json file>                   create controller"
+    echo "project --name <name>                                                       create project"
+    echo "service --project <projectname> --metadata <ini file>                       create service"
+    echo "cluster --name <cluster name> --provider <cluster provider name>            create cluster"
+    echo -e "\nget Options:\n"
+    echo "service --project <projectname> --name <servicename> --version <version>    get service info"
+    echo "services --project <projectname> --all                                      get all services"
+    echo "project --name <name>                                                       get project info"
+    echo "projects --all                                                              get all projects"
+    echo "controller --name <controllername>                                          get controller info"
+    echo "controllers --all                                                           get all controllers"
+    echo "cluster --name <cluster name> --provider <cluster provider name>            get cluster info"
+    echo "clusters --provider <cluster provider name> --all                           get all clusters"
+    echo "clusterproviders --all                                                      get all cluster providers"    
+    echo "dig --project <projectname> --name <servicename> --version <version> --all  get deployment intent groups"
+    echo -e "\ndelete Options:\n"
+    echo "dig --project <projectname> --name <servicename> --version <version>        delete deployment intent group"
+    echo "service --project <projectname> --name <servicename> --version <version>    delete service"
+    echo "controller --name <controllername>                                          delete controller"
+    echo "project --name <projectname>                                                delete project"
+    echo "cluster  --name <cluster name> --provider <cluster provider name>           delete cluster"
+    echo -e "\ninstantiate Options:\n"
+    echo "dig --project <projectname> --service <servicename> --version <version>" 
+    echo "                                                    --name <digname>        service instantiate"
+}
+
+case "$1" in
+    "create")
+	     case "$2" in
+		 "controller")
+		        shift
+		        var_check "$3"
+		        controller_name="$3"
+		        shift
+			meta_json="$4"
+			var_check "$4"
+			createController $controller_name $meta_json
+			;;														                             "project")
+			shift
+			var_check "$3"
+			project_name="$3"
+			createProject $project_name
+			;;
+		 "service")
+			shift
+			var_check "$3"
+			project_name="$3"
+			shift
+			ini_file="$4"
+			createService $project_name $ini_file
+			;;
+		 "cluster")
+			shift
+			var_check "$3"
+			cluster_name="$3"
+			shift
+			var_check "$4"
+	                cluster_provider_name="$4"
+			createCluster $cluster_name $cluster_provider_name
+			;;
+		   *) usage;;
+	     esac
+	     		;;
+    "get")
+	    case "$2" in
+		    "service")
+			  shift
+			  var_check "$3"
+			  project_name="$3"
+			  shift
+			  var_check "$4"
+			  service_name="$4"
+			  shift
+			  var_check "$5"
+			  version="$5"
+			  getService $project_name $service_name $version
+			  ;;
+		    "services")
+			  shift
+			  var_check "$3"
+	                  project_name="$3"
+			  var_check "$4"
+			  getService $project_name
+			  ;;
+		    "project")
+			  shift
+			  var_check "$3"
+			  project_name="$3"
+			  getProject $project_name
+			  ;;
+	            "projects")
+			  var_check "$3"
+			  getProject
+			  ;;
+	            "controller")
+			  shift
+			  var_check "$3"
+			  controller_name="$3"
+			  getController $controller_name
+			  ;;
+		    "controllers")
+			  var_check "$3"
+			  getController
+			  ;;
+		    "cluster")
+			  shift
+			  var_check "$3"
+			  cluster_name="$3"
+                          shift
+                          var_check "$4"
+                          cluster_provider_name="$4"
+			  getCluster $cluster_provider_name $cluster_name
+			  ;;
+	            "clusters")
+			  shift
+			  var_check "$3"
+			  cluster_provider_name="$3"
+			  var_check "$4"
+			  getCluster $cluster_provider_name
+			  ;;
+		    "clusterproviders")
+                          var_check "$3"
+			  getCluster
+			  ;;
+	            "dig")
+			 shift
+			 var_check "$3"
+			 project_name="$3"
+			 shift
+			 var_check "$4"
+			 service_name="$4"
+			 shift
+			 var_check "$5"
+			 version="$5"
+			 var_check "$6"
+			 getDig $project_name $service_name $version
+			 ;;
+		    *) usage;;
+
+	   esac
+	   	;;
+    "delete")
+	    case "$2" in
+		   "dig")
+		         shift
+			 var_check "$3"
+			 project_name="$3"
+			 shift
+			 var_check "$4"
+			 service_name="$4"
+			 shift
+			 var_check "$5"
+			 version="$5"
+			 deleteDIG $project_name $service_name $version
+			 ;;
+	           "service")
+		         shift
+			 var_check "$3"
+			 project_name="$3"
+			 shift
+			 var_check "$4"
+			 service_name="$4"
+			 shift
+			 var_check "$5"
+			 version="$5"
+			 deleteService $project_name $service_name $version
+		         ;;
+	           "controller")
+			 shift
+			 var_check "$3"
+			 controller_name="$3"
+			 deleteController $controller_name
+			 ;;
+                   "project")
+			 shift
+			 var_check "$3"
+			 project_name="$3"
+			 deleteProject $project_name
+			 ;;
+		   "cluster")
+		        shift
+		        var_check "$3"
+		        cluster_name="$3"
+		        shift
+		        var_check "$4"
+		        cluster_provider_name="$4"
+		        deleteCluster $cluster_name $cluster_provider_name
+		        ;;
+		   *) usage;;
+	    esac
+	        ;;
+    "instantiate")
+	    case "$2" in
+		  "dig")
+		       shift
+		       var_check "$3"
+		       project_name="$3"
+		       shift
+		       var_check "$4"
+		       service_name="$4"
+		       shift
+		       var_check "$5"
+		       version="$5"
+		       shift
+		       var_check "$6"
+		       dig_name="$6"
+		       instantiateDig $project_name $service_name $version $dig_name
+		       ;;
+		   *) usage;;
+	   esac
+	       ;;
+
+    * | --help) usage ;;
+    esac

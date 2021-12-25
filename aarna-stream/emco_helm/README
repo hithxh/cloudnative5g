@@ -1,0 +1,7 @@
+
+onap4k8s helm charts.
+1. deploy the dbs,
+kubectl apply -f onap4k8sdb.yaml -n onap4k8s
+2. deploy the modules,
+kubectl apply -f onap4k8s.yaml -n onap4k8s
+

@@ -1,0 +1,65 @@
+{
+	"spec": {
+		"projectName": "vFW5",
+		"appsData": [{
+			"metadata": {
+				"name": "firewall",
+				"description": "",
+				"UserData1": "data 1",
+				"UserData2": "data2",
+				"chartContent": "",
+				"status": ""
+			},
+			"clusters": [{
+				"provider": "provider5",
+				"selectedClusters": [{
+					"name": "clu5"
+				}]
+			}]
+		}, {
+			"metadata": {
+				"name": "packetgen",
+				"description": "",
+				"UserData1": "data 1",
+				"UserData2": "data2",
+				"chartContent": "",
+				"status": ""
+			},
+			"clusters": [{
+				"provider": "provider5",
+				"selectedClusters": [{
+					"name": "clu5"
+				}]
+			}]
+		}]
+	},
+	"name": "vFW_dig5",
+	"description": "",
+	"compositeProfile": "vFWapp5_profile",
+	"version": "v5",
+	"logicalCloudData": [{
+		"metadata": {
+			"name": "logical-cloud-5",
+			"description": "Cluster references forlogical-cloud-5"
+		},
+		"spec": {
+			"clusterProviders": [{
+				"metadata": {
+					"name": "provider5",
+					"description": "cluster providerprovider5"
+				},
+				"spec": {
+					"clusters": [{
+						"metadata": {
+							"name": "clu5",
+							"description": "Clusterclu5"
+						}
+					}]
+				}
+			}]
+		}
+	}],
+	"compositeApp": "vFWapp5",
+	"compositeAppVersion": "v1",
+	"logicalCloud": "logical-cloud-5"
+}

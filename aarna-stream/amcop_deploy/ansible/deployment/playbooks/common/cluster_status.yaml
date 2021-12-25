@@ -1,0 +1,18 @@
+- name: Check if all pods are running and ready
+  shell: "kubectl get pods --all-namespaces --no-headers -o yaml"
+  changed_when: false
+  register: pod_status
+  until:
+  - '(pod_status.stdout | from_yaml)["items"] | map(attribute = "status.phase") | unique | list != ["CrashloopBackOff"]'
+  retries: 15
+  delay: 10
+  failed_when: false
+
+- name: Check kubectl command output
+  shell: "kubectl get pods --all-namespaces -owide"
+  changed_when: false
+  register: pod_output
+
+- debug:
+    msg: "{{ pod_output.stdout.split('\n') }}"
+  failed_when: not pod_status is success

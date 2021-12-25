@@ -1,0 +1,53 @@
+# Copyright © 2020 Aarna Networks Inc
+# Modifications Copyright © 2018 AT&T
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+dependencies:
+  - name: f5gc-network
+    version: ~0.1-0
+    repository: 'file://components/f5gc-network'
+  - name: f5gc-mongodb
+    version: ~0.1-0
+    repository: 'file://components/f5gc-mongodb'
+  - name: f5gc-nrf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-nrf'
+  - name: f5gc-amf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-amf'
+  - name: f5gc-ausf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-ausf'
+  - name: f5gc-nssf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-nssf'
+  - name: f5gc-pcf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-pcf'
+  - name: f5gc-smf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-smf'
+  - name: f5gc-udm
+    version: ~0.1-0
+    repository: 'file://components/f5gc-udm'
+  - name: f5gc-udr
+    version: ~0.1-0
+    repository: 'file://components/f5gc-udr'
+  - name: f5gc-upf
+    version: ~0.1-0
+    repository: 'file://components/f5gc-upf'
+  - name: f5gc-webui
+    version: ~0.1-0
+    repository: 'file://components/f5gc-webui'
+

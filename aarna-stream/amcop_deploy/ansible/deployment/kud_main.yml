@@ -1,0 +1,45 @@
+---
+- name: Setting up resources
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  pre_tasks:
+    - include_tasks: "playbooks/common/prerequisite_check.yaml"
+  tasks:
+    - include_tasks: "playbooks/common/setup_git_repo.yaml"
+    - include_tasks: "playbooks/common/copy_inventory_files.yaml"
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Create Servers
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    serv_name: "{% if server_name is defined %}{{server_name}}{% else %}{{vm_name}}{% endif %}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+    fileOutput: "{{ lookup('file', 'config/deployment.json') | from_json }}"
+    serverList: "{{fileOutput.servers}}"
+
+  roles:
+    - role: create-vms
+      tags: vm
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Setup KUD cluster
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    serv_name: "{% if server_name is defined %}{{server_name}}{% else %}{{vm_name}}{% endif %}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+
+  roles:
+    - role: kud-cluster
+
+  vars_files:
+    - playbooks/vars/vars.yml

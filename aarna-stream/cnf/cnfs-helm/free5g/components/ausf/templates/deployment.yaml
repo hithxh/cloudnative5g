@@ -1,0 +1,100 @@
+# Copyright © 2020 Aarna Networks
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: free5gc-ausf-deployment
+spec:
+  selector:
+    matchLabels:
+      app: free5gc-ausf
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: free5gc-ausf
+    spec:
+      containers:
+        - name: myapp-container
+          image: 'registry.gitlab.com/infinitydon/registry/free5gc-cpf:v3.0.1'
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - ./bin/ausf
+          volumeMounts:
+            - name: ausfcfg
+              mountPath: /go/src/free5gc/config/ausfcfg.conf
+              subPath: ausfcfg.conf
+            - name: free5gc
+              mountPath: /go/src/free5gc/config/free5GC.conf
+              subPath: free5GC.conf
+      initContainers:
+        - name: init-network-client
+          image: 'sdnvortex/network-controller:v0.4.9'
+          command:
+            - /go/bin/client
+          args:
+            - '-s=unix:///tmp/vortex.sock'
+            - '-b=br0'
+            - '-n=eth1'
+            - '-i=192.168.2.4/24'
+            - '-g=192.168.2.254'
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_UUID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+          volumeMounts:
+            - mountPath: /tmp/
+              name: grpc-sock
+      volumes:
+        - name: grpc-sock
+          hostPath:
+            path: /tmp/vortex/
+        - name: ausfcfg
+          configMap:
+            name: free5gc-configmap
+            items:
+              - key: ausfcfg.conf
+                path: ausfcfg.conf
+        - name: free5gc
+          configMap:
+            name: free5gc-configmap
+            items:
+              - key: free5GC.conf
+                path: free5GC.conf
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: service-ausf 
+spec:
+  selector:
+    app: free5gc-ausf 
+  ports:
+  - name: http 
+    port: 29509 
+    targetPort: 29509 
+    protocol: TCP

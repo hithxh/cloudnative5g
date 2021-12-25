@@ -1,0 +1,7 @@
+- name: Copy kubeconfig to user
+  shell: |
+    sudo cp -r /root/.kube  /home/{{ansible_ssh_user}}/.
+    sudo chown -R {{ansible_ssh_user}}:{{ansible_ssh_user}} /home/{{ansible_ssh_user}}/.kube
+  become: yes
+  become_method: sudo
+

@@ -1,0 +1,8 @@
+{
+    "rb-name": "RESOURCE_BUNDLE_NAME",
+    "rb-version": "RESOURCE_BUNDLE_VERSION",
+    "chart-name": "COMP_APP_NAME",
+    "description": "adding resource bundle for composite application/service",
+    "labels": {
+    }
+}

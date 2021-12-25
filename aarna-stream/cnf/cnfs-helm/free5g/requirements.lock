@@ -1,0 +1,42 @@
+dependencies:
+- name: mongodb
+  repository: file://components/mongodb
+  version: 0.1.0
+- name: nrf
+  repository: file://components/nrf
+  version: 0.1.0
+- name: amf
+  repository: file://components/amf
+  version: 0.1.0
+- name: ausf
+  repository: file://components/ausf
+  version: 0.1.0
+- name: mongodb
+  repository: file://components/mongodb
+  version: 0.1.0
+- name: n3iwf
+  repository: file://components/n3iwf
+  version: 0.1.0
+- name: nssf
+  repository: file://components/nssf
+  version: 0.1.0
+- name: pcf
+  repository: file://components/pcf
+  version: 0.1.0
+- name: smf
+  repository: file://components/smf
+  version: 0.1.0
+- name: udm
+  repository: file://components/udm
+  version: 0.1.0
+- name: udr
+  repository: file://components/udr
+  version: 0.1.0
+- name: upf
+  repository: file://components/upf
+  version: 0.1.0
+- name: webui
+  repository: file://components/webui
+  version: 0.1.0
+digest: sha256:cd6f999d184f7c6d74290e3ab2ad381ba489f118c1011d52e8d5118bd7ed54fd
+generated: "2020-09-09T09:35:26.113438242Z"

@@ -1,0 +1,9 @@
+- name: Installing SMO
+  shell: |
+    cd {{smo_folder}}
+    helm install --namespace {{k8s_namespace}} -n sdnr .
+  register: smo_out
+- debug: var=smo_out.stdout_lines
+
+- name: Sleeping for 30 seconds for the services to come up
+  wait_for: timeout=30

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdap 
+  labels:
+    app: cdap 
+spec:
+  selector:
+    app: cdap 
+  type: NodePort
+  ports:
+  - name: "11011"
+    port: 11011
+    nodePort: 31011
+  - name: "11015"
+    port: 11015
+    nodePort: 31015
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdap 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cdap 
+  template:
+    metadata:
+      labels:
+        app: cdap 
+    spec:
+      containers:
+        - name: cdap 
+          image: amcop/cdap-standalone:latest
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 11011
+          - containerPort: 11015
+          env:
+            - name: "PATH"
+              value: "/opt/cdap/sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            - name: "GOSU_VERSION"
+              value: "1.7"
+

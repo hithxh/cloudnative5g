@@ -1,0 +1,122 @@
+{
+  "tosca_definitions_version" : "controller_blueprint_1_0_0",
+  "metadata" : {
+    "template_author" : "Aarna Service",
+    "author_email" : "aarna_services@aarnanetworks.com",
+    "user_groups" : "ADMIN, OPERATION",
+    "template_name" : "ntsim_netconf",
+    "template_version" : "1.0.0",
+    "template_tags" : "restconf, config, configuration"
+  },
+  "imports" : [ ],
+  "dsl_definitions" : {
+    "config-deploy-properties" : {
+      "resolution-key" : {
+        "get_input" : "resolution-key"
+      }
+    }
+  },
+  "topology_template" : {
+    "workflows" : {
+      "config-deploy" : {
+        "steps" : {
+             "imperative-workflow-step-1": {
+                  "description": "execute restconf",
+                  "target": "execute",
+                  "activities": [
+                     {
+                        "call_operation": "ComponentScriptExecutor.process"
+                     }
+                  ]
+               }
+            },
+        "inputs" : {
+          "resolution-key" : {
+            "required" : true,
+            "type" : "string"
+          },
+          "netconf-password" : {
+            "required" : true,
+            "type" : "string"
+          },
+          "netconf-username" : {
+            "required" : true,
+            "type" : "string"
+          },
+          "ntsim-address" : {
+            "required" : true,
+            "type" : "string"
+          },
+	  "netconf-server-port" : {
+	    "required" : true,
+	    "type" : "integer",
+	    "default" : 8300
+          },
+          "config-deploy-properties" : {
+            "description" : "Dynamic PropertyDefinition for workflow(config-deploy).",
+            "required" : true,
+            "type" : "dt-config-assign-properties"
+          }
+        }
+      }
+    },
+    "node_templates" : {
+      "netconf-device" : {
+        "type": "vnf-netconf-device",
+        "capabilities": {
+          "netconf": {
+            "properties": {
+              "login-key": {
+                "get_input": "netconf-password"
+              },
+              "login-account": {
+                "get_input": "netconf-username"
+              },
+              "target-ip-address": {
+                "get_input": "ntsim-address"
+              },
+              "port-number": {
+		 "get_input": "netconf-server-port"
+	      },
+              "connection-time-out": 5
+            }
+          }
+        }
+      },
+      "execute" : {
+        "type" : "component-script-executor",
+        "requirements" : {
+          "netconf-connection" : {
+            "capability" : "netconf",
+            "node" : "netconf-device",
+            "relationship" : "tosca.relationships.ConnectsTo"
+          }
+        },
+	"artifacts": {
+		"netconfrpc-template": {
+			"type": "artifact-template-velocity",
+			"file": "Templates/netconfrpc-template.vtl"
+		},
+			"netconfrpc-mapping": {
+				"type": "artifact-mapping-resource",
+				"file": "Templates/netconfrpc-mapping.json"
+			}
+	},
+        "interfaces" : {
+          "ComponentScriptExecutor" : {
+            "operations" : {
+              "process" : {
+                "inputs" : {
+                  "script-type" : "kotlin",
+                  "script-class-reference" : "org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts.ConfigDeploy",
+                  "instance-dependencies" : [ ],
+                  "dynamic-properties" : "*config-deploy-properties"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

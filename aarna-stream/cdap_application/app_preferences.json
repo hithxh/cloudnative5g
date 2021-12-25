@@ -1,0 +1,8 @@
+{
+	"subscriberHosts": "kafka1.onap4k8s.svc.cluster.local:9092",
+	"subscriberTopics": "unauthenticated.VES_NOTIFICATION_OUTPUT",
+	"pcfEndpoint": "10.20.249.52:39001",
+	"cdsEndpoint": "cds-blueprints-processor-http.onap.svc.cluster.local:8080",
+	"alertPolicies": "{\"PDU_SessionRegistrationFailed_Alert\":{\"domain\":\"notification\",\"eventName\":\"Notification_PDU_SessionRegistrationFailed\",\"changeType\":\"config-unavailable\"}}",
+	"alertActionPolicies": "{\"PDU_SessionRegistrationFailed_Alert\": {\"action\": \"PCF_Subscription_policy\",\"description\":\"Do perform subscription policy on the PCF\"}}"
+}

@@ -1,0 +1,29 @@
+---
+# tasks file for create-vms
+- debug:
+    msg: "{{user_name}}"
+
+- name: "Creating VM(s) with default server name"
+  shell: |
+      cd {{anod_lite_util_script_path}}
+      ./create_qem_vm.sh "0" "{{ item.server_name }}" "{{ item.disk_size }}" "{{ item.vcpu }}" "{{ item.memory }}" "{{ item.os_variant }}" {{ssh_public_key}} {{user_name}}
+  register: vm_create_output
+  with_items: "{{ serverList }}"
+  when: 
+    - "item.server_name != '<VM-NAME>'"
+    - "serv_name == 'SERV_NAME'"
+
+- name: "Creating VM(s) with server name: {{serv_name}}"
+  shell: |
+      cd {{anod_lite_util_script_path}}
+      ./create_qem_vm.sh "0" {{serv_name}} "{{ item.disk_size }}" "{{ item.vcpu }}" "{{ item.memory }}" "{{ item.os_variant }}" {{ssh_public_key}} {{user_name}}
+  register: vm_create_output
+  with_items: "{{ serverList }}"
+  when:
+    - "item.server_name != '<VM-NAME>'"
+    - "serv_name != 'SERV_NAME'"
+
+- local_action: 
+    module: copy 
+    content: "{{ vm_create_output}}"
+    dest: "{{anod_lite_log_folder}}/create_vm.log"

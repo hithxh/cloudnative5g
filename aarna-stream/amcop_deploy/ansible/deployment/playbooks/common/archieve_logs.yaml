@@ -1,0 +1,20 @@
+- name: Checking if aarna-stream folder is present
+  stat:
+    path: "{{anod_lite_log_folder}}"
+  register: result_a
+
+- name: Create a tar.gz archive of the log folder
+  archive:
+    path: "{{anod_lite_log_folder}}"
+    dest: "$HOME/logs.{{ ansible_date_time.iso8601_basic_short}}.gz"
+    format: gz
+    #force_archive: true
+  when: "result_a.stat.exists"
+
+#- name: Remove aarna-stream folder
+#  shell: |
+#    sudo rm -rf "$HOME/aarna-stream"
+#  args:
+#    warn: false
+#  register: git_rep
+#- debug: var=git_rep.stdout_lines 

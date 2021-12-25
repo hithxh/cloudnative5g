@@ -1,0 +1,6 @@
+- name: Deploying Persistant Storage Provider
+  shell: |
+    cd {{operator_folder}}
+    kubectl apply -f 01-persistent-storage-provider.yaml
+  register: provider_out
+- debug: var=provider_out.stdout_lines

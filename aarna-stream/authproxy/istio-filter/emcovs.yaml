@@ -1,0 +1,28 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: emcoclm 
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - emco-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /v2/cluster-providers
+    route:
+    - destination:
+        host: clm 
+        port:
+          number: 9061
+  - match:
+    - uri:
+        prefix: /v2/ncm 
+    rewrite:    
+      uri: /v2/cluster-providers
+    route:
+    - destination:
+        host: ncm 
+        port:
+          number: 9031

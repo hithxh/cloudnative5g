@@ -1,0 +1,29 @@
+---
+- import_playbook: "{{kubespray_dir}}/cluster.yml"
+
+- hosts: all
+  gather_facts: no
+  tasks:
+    - include_tasks: common/copy_kube_config.yaml
+    - include_tasks: common/install_common.yaml
+  vars_files:
+    - vars/vars.yml
+
+- name: Setup Anod Lite
+  hosts: node1
+  gather_facts: no
+  become: yes
+  become_user: "{{ansible_ssh_user}}"
+  tasks:
+     - block:
+        - include_tasks: common/install_helm_2.yaml
+        - include_tasks: oom/oom_setup_helm2.yaml
+       when: helmversion=='2'
+
+     - block:
+        - include_tasks: common/install_helm_3.yaml
+        - include_tasks: oom/oom_setup.yaml
+       when: helmversion=='3'
+  vars_files:
+    - vars/vars.yml
+

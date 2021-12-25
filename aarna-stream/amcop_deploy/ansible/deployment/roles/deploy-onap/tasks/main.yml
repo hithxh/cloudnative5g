@@ -1,0 +1,11 @@
+---
+# tasks file for deploy-onap
+- name: Install
+  shell: |
+        cd {{ anod_lite_util_script_path }}
+        sudo ./deploy_onap.sh {{anod_lite_deployment_json_path}} {{jump_host_ip}} {{override_file}} {{anod_lite_log_folder}} {{ssh_private_key}} {{jump_host_user}} {{anod_nfs_folder}} {{user_name}} {{serv_name}}
+  become: yes
+  become_method: sudo
+  register: output
+- debug: var=output
+

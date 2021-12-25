@@ -1,0 +1,33 @@
+# The below task sets the common components such as git repo, inventory files etc
+# and checks the ansible and jq versions required for the AMCOP installation
+- name: Setting up resources
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+  pre_tasks:
+    - include_tasks: "playbooks/common/prerequisite_check.yaml"
+  tasks:
+    - include_tasks: "playbooks/common/archieve_logs.yaml"
+    - include_tasks: "playbooks/common/setup_git_repo.yaml"
+    - include_tasks: "playbooks/common/copy_inventory_files.yaml"
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Deploying AMCOP on on-prem
+  import_playbook: bm_main.yml 
+  when: deployment_env=='on-prem'
+
+- name: Deploying AMCOP on GKE  
+  import_playbook: gke_main.yml 
+  when: deployment_env=='gke'
+
+- name: Deploying AMCOP on AKS
+  import_playbook: aks_main.yml
+  when: deployment_env=='aks'
+
+- name: Deploying AMCOP on Openshift
+  import_playbook: openshift_main.yml
+  when: deployment_env=='openshift'
+

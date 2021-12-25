@@ -1,0 +1,15 @@
+- name: Install python-pip
+  shell: |
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+    sudo apt-get install -y python-pip
+  register: output
+- debug: var=output.stdout_lines
+
+- include_tasks: common/onap4k8s_repo.yaml
+
+- name: KUD cluster
+  shell: |
+    cd $HOME/{{onap4k8s_path}}/{{kud_script_path}}
+    ./aio.sh
+  register: clstuer_output

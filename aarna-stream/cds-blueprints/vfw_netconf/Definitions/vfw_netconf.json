@@ -1,0 +1,340 @@
+{
+	"tosca_definitions_version": "controller_blueprint_1_0_0",
+	"metadata": {
+		"template_author": "Aarna Service",
+		"author_email": "aarna_services@aarnanetworks.com",
+		"user_groups": "ADMIN, OPERATION",
+		"template_name": "vfw_netconf",
+		"template_version": "1.0.0",
+		"template_tags": "vfw, restconf, config, configuration"
+	},
+	"imports": [],
+	"dsl_definitions": {
+		"stream-count-config-get-schema-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"stream-count-config-edit-schema-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"stream-count-config-get-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"stream-count-config-edit-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		}
+	},
+	"topology_template": {
+		"workflows": {
+			"stream-count-config-get-schema": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "This is the workflow to get stream-count-config-get NB payload schema",
+						"target": "stream-count-config-get-schema-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "stream-count-config-get-schema"
+					},
+					"stream-count-config-get-schema-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(stream-count-config-get-schema-properties).",
+						"required": true,
+						"type": "dt-stream-count-config-get-schema-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["stream-count-config-get-schema-api", "response-data"]
+						}
+					}
+				}
+			},
+			"stream-count-config-edit-schema": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "This is the workflow to get stream-count-config-edit NB payload schema",
+						"target": "stream-count-config-edit-schema-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "stream-count-config-edit-schema"
+					},
+					"stream-count-config-edit-schema-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(stream-count-config-edit-schema-properties).",
+						"required": true,
+						"type": "dt-stream-count-config-edit-schema-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["stream-count-config-edit-schema-api", "response-data"]
+						}
+					}
+				}
+			},
+			"stream-count-config-get": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "execute netconf",
+						"target": "stream-count-config-get-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "stream-count-config-get"
+					},
+					"netconf-password": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-username": {
+						"required": true,
+						"type": "string"
+					},
+					"pnf-ipv4-address": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-server-port": {
+						"required": true,
+						"type": "integer",
+						"default": 830
+					},
+					"stream-count-config-get-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(stream-count-config-get).",
+						"required": true,
+						"type": "dt-stream-count-config-get-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["stream-count-config-get-api", "response-data"]
+						}
+					}
+				}
+			},
+			"stream-count-config-edit": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "execute netconf",
+						"target": "stream-count-config-edit-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "stream-count-config-edit"
+					},
+					"netconf-password": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-username": {
+						"required": true,
+						"type": "string"
+					},
+					"pnf-ipv4-address": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-server-port": {
+						"required": true,
+						"type": "integer",
+						"default": 830
+					},
+					"stream-count-config-edit-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(stream-count-config-edit).",
+						"required": true,
+						"type": "dt-stream-count-config-edit-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["stream-count-config-edit-api", "response-data"]
+						}
+					}
+				}
+			}
+		},
+		"node_templates": {
+			"netconf-device": {
+				"type": "vnf-netconf-device",
+				"capabilities": {
+					"netconf": {
+						"properties": {
+							"login-key": {
+								"get_input": "netconf-password"
+							},
+							"login-account": {
+								"get_input": "netconf-username"
+							},
+							"target-ip-address": {
+								"get_input": "pnf-ipv4-address"
+							},
+							"port-number": {
+								"get_input": "netconf-server-port"
+							},
+							"connection-time-out": 5
+						}
+					}
+				}
+			},
+			"stream-count-config-get-schema-api": {
+				"type": "component-script-executor",
+				"requirements": {},
+				"interfaces": {
+					"ComponentScriptExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.stream.scripts.StreamCountConfigGetSchema",
+									"dynamic-properties": "*stream-count-config-get-schema-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"stream-count-config-get-schema-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/stream-count-config-get-schema-mapping.json"
+					},
+					"stream-count-config-get-schema-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/stream-count-config-get-schema-template.vtl"
+					}
+				}
+			},
+			"stream-count-config-edit-schema-api": {
+				"type": "component-script-executor",
+				"requirements": {},
+				"interfaces": {
+					"ComponentScriptExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.stream.scripts.StreamCountConfigEditSchema",
+									"dynamic-properties": "*stream-count-config-edit-schema-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"stream-count-config-edit-schema-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/stream-count-config-edit-schema-mapping.json"
+					},
+					"stream-count-config-edit-schema-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/stream-count-config-edit-schema-template.vtl"
+					}
+				}
+			},
+			"stream-count-config-get-api": {
+				"type": "component-netconf-executor",
+				"requirements": {
+					"netconf-connection": {
+						"capability": "netconf",
+						"node": "netconf-device",
+						"relationship": "tosca.relationships.ConnectsTo"
+					}
+				},
+				"interfaces": {
+					"ComponentNetconfExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.stream.scripts.StreamCountConfigGet",
+									"dynamic-properties": "*stream-count-config-get-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"stream-count-config-get-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/stream-count-config-get-mapping.json"
+					},
+					"stream-count-config-get-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/stream-count-config-get-template.vtl"
+					}
+				}
+			},
+			"stream-count-config-edit-api": {
+				"type": "component-netconf-executor",
+				"requirements": {
+					"netconf-connection": {
+						"capability": "netconf",
+						"node": "netconf-device",
+						"relationship": "tosca.relationships.ConnectsTo"
+					}
+				},
+				"interfaces": {
+					"ComponentNetconfExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.stream.scripts.StreamCountConfigEdit",
+									"dynamic-properties": "*stream-count-config-edit-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"stream-count-config-edit-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/stream-count-config-edit-mapping.json"
+					},
+					"stream-count-config-edit-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/stream-count-config-edit-template.vtl"
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+- name: Create ${{anod_resources_folder }} directory
+  file:
+    path: "{{ anod_resources_folder }}"
+    mode: '0700'
+    state: directory
+
+# Copy the GCP cloud storage JSON key file
+- name: Copy local file "{{ gcp_service_account_key_file }}" to remote folder ~/.anod
+  copy:
+    src: "{{ gcp_service_account_key_file }}"
+    mode: '0600'
+    dest: "{{ anod_resources_folder }}"
+

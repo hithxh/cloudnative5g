@@ -1,0 +1,43 @@
+{
+    "servers": [
+    {
+      "server_name": "amcop-vm-01",
+      "ip_address": "<IP-ADDRESS>",
+      "vcpu": 16,
+      "memory": 32,
+      "disk_size": 50,
+      "os_variant": "ubuntu18.04",
+      "is_master": true,
+      "cluster_ref_name": "amcop-cluster-01"
+    },   
+    {
+      "server_name": "<VM-NAME>",
+      "ip_address": "<IP-ADDRESS>",
+      "vcpu": "<VCPU>",
+      "memory": "<MEMORY>",
+      "disk_size": "<DISK-SIZE>",
+      "os_variant": "<OS-VARIANT>",
+      "is_master": true,
+      "cluster_ref_name": "<CLUSTER-NAME>"
+    }
+   ],
+     "clusters":
+   [
+       {
+          "cluster_name": "amcop-cluster-01"
+      }
+   ],
+     "deployment_configs":
+   {
+     "onap_config":
+    {
+        "branch_name": "guilin",
+        "cluster_ref_name": "amcop-cluster-01"
+    },
+    "emco_config":
+    {
+        "name": "<NAME>",
+        "cluster_ref_name": "amcop-cluster-01"
+    } 
+  }
+}

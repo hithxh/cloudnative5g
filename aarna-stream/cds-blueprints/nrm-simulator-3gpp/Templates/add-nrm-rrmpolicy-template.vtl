@@ -1,0 +1,33 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <?xml version="1.0" ?>
+		<RRMPolicyRatio xmlns="urn:3gpp:sa5:3gpp-nr-nrm-nrnetwork-rrmpolicy">
+		   <id>${id}</id>
+		   <attributes>
+			  <resourceType>JR1RRq1JRqR1R</resourceType>
+			  <rRMPolicyMemberList>
+				 <idx>1810740646</idx>
+				 <mcc>575</mcc>
+				 <mnc>016</mnc>
+				 <sNSSAI>146</sNSSAI>
+			  </rRMPolicyMemberList>
+			  <rRMPolicyMemberList>
+				 <idx>2288664268</idx>
+				 <mcc>523</mcc>
+				 <mnc>144</mnc>
+				 <sNSSAI>175</sNSSAI>
+			  </rRMPolicyMemberList>
+			  <quotaType>FLOAT</quotaType>
+			  <rRMPolicyMaxRatio>${rRMPolicyMaxRatio.asInt()}</rRMPolicyMaxRatio>
+			  <rRMPolicyMarginMaxRatio>${rRMPolicyMarginMaxRatio.asInt()}</rRMPolicyMarginMaxRatio>
+			  <rRMPolicyMinRatio>${rRMPolicyMinRatio.asInt()}</rRMPolicyMinRatio>
+			  <rRMPolicyMarginMinRatio>${rRMPolicyMarginMinRatio.asInt()}</rRMPolicyMarginMinRatio>
+		   </attributes>
+		</RRMPolicyRatio>
+    </config>
+  </edit-config>
+</rpc>

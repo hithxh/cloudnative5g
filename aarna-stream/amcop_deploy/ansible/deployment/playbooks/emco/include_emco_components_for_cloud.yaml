@@ -1,0 +1,22 @@
+#- include_tasks: install_istio.yaml
+#- include_tasks: install_onap4k8s.yaml
+#- include_tasks: setup_keycloak.yaml
+#- include_tasks: install_middleend.yaml
+#- include_tasks: setup_authproxy.yaml
+#- include_tasks: install_analytics_components.yaml
+- include_tasks: install_operator.yaml
+
+- name: Replace storage class value
+  replace:
+     path: "{{operator_folder}}/03-amcop-installer-with-persistent-volume.yaml"
+     regexp: 'amcop-local-path'
+     replace: '""'
+
+- name: Disable CDS
+  replace:
+     path: "{{operator_folder}}/03-amcop-installer-with-persistent-volume.yaml"
+     regexp: 'cds: enable'
+     replace: ''
+
+
+- include_tasks: amcop_persistent_volume.yaml

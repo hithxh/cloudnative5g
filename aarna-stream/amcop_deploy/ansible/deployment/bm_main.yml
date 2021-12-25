@@ -1,0 +1,50 @@
+---
+- name: Create Servers
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    serv_name: "{% if server_name is defined %}{{server_name}}{% else %}{{vm_name}}{% endif %}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+    fileOutput: "{{ lookup('file', 'config/deployment.json') | from_json }}"
+    serverList: "{{fileOutput.servers}}"
+  
+  roles:
+    - role: create-vms
+      tags: vm
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+# gather_facts is required to collect system variables that read by ansible
+- name: Create Cluster
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    jump_host_ip: "{{inventory_hostname}}"
+    serv_name: "{% if server_name is defined %}{{server_name}}{% else %}{{vm_name}}{% endif %}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+
+  roles:
+    - role: create-cluster
+      tags: cluster
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Deploy Emco
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    jump_host_ip: "{{inventory_hostname}}"
+    jump_host_user: "{{jump_host_user}}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{default_vm_user_name}}{% endif %}"
+
+  roles:
+    - role: emco
+      tags: emco
+
+  vars_files:
+    - playbooks/vars/vars.yml

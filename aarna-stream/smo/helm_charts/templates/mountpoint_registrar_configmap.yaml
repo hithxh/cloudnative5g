@@ -1,0 +1,35 @@
+kind: ConfigMap
+metadata:
+  name: mountpointregistrar
+apiVersion: v1
+data:
+  mountpoint-registrar.properties: |+
+    [general]
+    dmaapEnabled=true
+    baseUrl=http://sdnr.{{ .Values.namespace}}:8181
+    sdnrUser=admin
+    sdnrPasswd={{ .Values.sdnr.odladminpassword}}
+
+    [fault]
+    faultConsumerClass=org.onap.ccsdk.features.sdnr.wt.mountpointregistrar.impl.DMaaPFaultVESMsgConsumer
+    TransportType=HTTPNOAUTH
+    host=dmaap.{{ .Values.namespace}}:3904
+    topic=unauthenticated.SEC_FAULT_OUTPUT
+    contenttype=application/json
+    group=myG
+    id=C1
+    timeout=2000
+    limit=1000
+    fetchPause=5000
+
+    [pnfRegistration]
+    pnfRegConsumerClass=org.onap.ccsdk.features.sdnr.wt.mountpointregistrar.impl.DMaaPPNFRegVESMsgConsumer
+    TransportType=HTTPNOAUTH
+    host=dmaap.{{ .Values.namespace}}:3904
+    topic=unauthenticated.VES_PNFREG_OUTPUT
+    contenttype=application/json
+    group=myG
+    id=C1
+    timeout=2000
+    limit=1000
+    fetchPause=5000

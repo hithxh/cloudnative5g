@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: emconcm 
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - emco-gateway
+  http:
+  - match:
+    - uri:
+        regex: 'networks' 
+    - uri:
+        regex: 'provider-networks' 
+    - uri:
+        regex: 'apply$' 
+    - uri:
+        regex: 'terminate$' 
+    route:
+    - destination:
+        host: ncm 
+        port:
+          number: 9031

@@ -1,0 +1,28 @@
+- name: Identify required folders
+  find:
+    paths: "$HOME/aarna-stream"
+    file_type: any
+    excludes: 'util-scripts,amcop_deploy,emco_helm,authproxy,cnf,onap4k8s-ui,dcae_helm,cds-blueprints,awe,smo,install,operator'
+  register: folders_to_delete
+
+- name: Copy required folders
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ folders_to_delete.files }}"
+
+- name: Identify files from install directory
+  find:
+    paths: "$HOME/aarna-stream/install"
+    file_type: file
+    excludes: 
+        - 'free5g_install_prereq.sh'
+        - 'example.go'
+  register: files_to_delete
+
+- name: Removing files from install directory
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_to_delete.files }}"
+

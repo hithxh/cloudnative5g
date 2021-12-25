@@ -1,0 +1,8 @@
+{
+    "cloud-region": "kud",
+    "profile-name": "p1",
+    "rb-name":"test-vfw",
+    "rb-version":"v1",
+    "labels": {
+    }
+}

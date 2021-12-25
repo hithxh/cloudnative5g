@@ -1,0 +1,9 @@
+#- include_tasks: install_istio.yaml
+#- include_tasks: install_onap4k8s.yaml
+#- include_tasks: setup_keycloak.yaml
+#- include_tasks: install_middleend.yaml
+#- include_tasks: setup_authproxy.yaml
+#- include_tasks: install_analytics_components.yaml
+- include_tasks: deploy_persistant_storage_provider.yaml
+- include_tasks: install_operator.yaml
+- include_tasks: amcop_persistent_volume.yaml

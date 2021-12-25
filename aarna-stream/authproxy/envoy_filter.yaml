@@ -1,0 +1,78 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: lua-filter
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.http_connection_manager"
+            subFilter:
+              name: "envoy.router"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+       name: envoy.lua
+       typed_config:
+         "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
+         inlineCode: |
+          function login (request_handle)
+            local request_url = "http://"..request_handle:headers():get(":authority")..request_handle:headers():get(":path")
+            headers, body = request_handle:httpCall(
+              "outbound|8090||oauthproxy-service.istio-system.svc.cluster.local",
+              {
+                [":method"] = "GET",
+                [":path"] = "/p/login",
+                [":authority"] = request_handle:headers():get(":authority"),
+                ["X-Auth-Request-Redirect"] = request_url,
+                ["Authorization"] = token
+              },
+              nil,
+              5000)
+            return headers, body
+          end
+          function envoy_on_request(request_handle)
+            local path = request_handle:headers():get(":path")
+            -- ignore metrics, liveness probe requests
+            if path == "/" then
+              return
+            end
+            token = request_handle:headers():get("Authorization")
+            cookie = request_handle:headers():get("Cookie")
+            if token == nil and cookie == nil then
+               headers, body = login(request_handle)
+               request_handle:respond(headers,body)
+            end
+            request_handle:logInfo("validating token against /p/auth")
+            local headers, body = request_handle:httpCall(
+              "outbound|8090||oauthproxy-service.istio-system.svc.cluster.local",
+              {
+                [":method"] = "GET",
+                [":path"] = "/p/auth",
+                [":authority"] = request_handle:headers():get(":authority"),
+                ["Authorization"] = token,
+                ["Cookie"] = cookie
+              },
+              nil,
+              5000)
+            local status
+            for header, value in pairs(headers) do
+              if header == ":status" then
+                 status = value
+              end
+            end
+            
+            request_handle:logInfo("token validation status:"..status)
+            if status == "401" then
+              headers, body = login(request_handle)
+              request_handle:respond(headers,body)
+            end
+          end

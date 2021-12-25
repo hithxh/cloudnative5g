@@ -1,0 +1,88 @@
+{
+  "realm": "EMCO",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+    "requiredCredentials": [
+    "password"
+  ],
+
+  "users": [
+    {
+      "username": "Admin",
+      "enabled": true,
+      "email": "Admin-user@example",
+      "firstName": "Admin",
+      "lastName": "Admin",
+      "credentials": [
+        {
+        "type": "password",
+        "value": "Admin"
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "offline_access",
+        "uma_authorization"
+      ],
+      "clientRoles": {
+        "account": [
+          "view-profile",
+          "manage-account"
+        ]
+      }
+    }
+  ],
+
+  "roles": {
+    "realm": [
+      {
+        "description": "User privileges",
+        "name": "user"
+      },
+      {
+        "description": "Administrator privileges",
+        "name": "admin"
+      }
+    ]
+  },
+
+  "scopeMappings": [
+    {
+      "client": "emcoapp",
+      "roles": [
+        "admin"
+      ]
+    }
+  ],
+
+  "clients": [
+    {
+      "clientId": "emcoapp",
+      "rootUrl": "http://192.168.122.222:30654",
+      "adminUrl": "http://192.168.122.222:30654",
+      "clientAuthenticatorType": "client-secret",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://192.168.122.222:30775/p/callback"
+      ],
+      "webOrigins": [
+        "http://192.168.122.222:30654/*"
+      ]
+    }
+  ],
+ 
+  "clientScopeMappings": {
+    "account": [
+      {
+        "client": "emcoapp",
+        "roles": [
+          "view-profile",
+          "manage-account"
+        ]
+      }
+    ]
+  }
+}

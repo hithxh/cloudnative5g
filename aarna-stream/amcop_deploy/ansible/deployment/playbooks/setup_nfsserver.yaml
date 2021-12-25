@@ -1,0 +1,10 @@
+---
+- name: Setup NFS export
+  hosts: deployment_host
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+  tasks:
+    - include_tasks: common/setup_nfs_server.yaml
+  vars_files:
+    - vars.yaml

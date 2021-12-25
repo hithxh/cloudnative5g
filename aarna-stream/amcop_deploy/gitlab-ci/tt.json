@@ -1,0 +1,83 @@
+{
+
+ "name": "vFW1",
+
+ "description": "vFWService description",
+
+ "spec": {
+
+   "projectName": "TEST8",
+
+   "appsData": [
+
+     {
+
+       "metadata": {
+
+         "name": "packetgen",
+
+         "description": "desc of packetgen",
+
+         "filename": "packetgen.tgz"
+
+       },
+
+       "profileMetadata": {
+
+         "name": "packetgen_profile.tar.gz",
+
+         "filename": "profile.tar.gz"
+
+       }
+
+     },
+
+     {
+
+       "metadata": {
+
+         "name": "sink",
+
+         "description": "desc of sink",
+
+         "filename": "sink.tgz"
+
+       },
+
+       "profileMetadata": {
+
+         "name": "sink_profile.tar.gz",
+
+         "filename": "profile.tar.gz"
+
+       }
+
+     },
+
+     {
+
+       "metadata": {
+
+         "name": "firewall",
+
+         "description": "desc of firewall",
+
+         "filename": "firewall.tgz"
+
+       },
+
+       "profileMetadata": {
+
+         "name": "firewall_profile.tar.gz",
+
+         "filename": "profile.tar.gz"
+
+       }
+
+     }
+
+   ]
+
+ }
+
+}

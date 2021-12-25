@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "OVNACTIONCTRLNAME",
+      "description": "description of OVNACTIONCTRLNAME controller",
+      "userData1": "user data 2 for OVNACTIONCTRLNAME",
+      "userData2": "user data 2 for OVNACTIONCTRLNAME"
+              },
+  "spec": {
+      "host": "OVNACTIONCTRLNAME",
+      "type": "action",
+      "priority": 1,
+      "port": 9053
+      }
+}

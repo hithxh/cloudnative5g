@@ -1,0 +1,11 @@
+---
+# tasks file for emco
+- name: Install
+  shell: |
+        cd {{ anod_lite_util_script_path }}
+        sudo /bin/bash -x ./deploy_emco_components.sh  {{anod_lite_deployment_json_path}} {{jump_host_ip}} {{anod_lite_log_folder}} {{ssh_private_key}} {{jump_host_user}} {{user_name}}
+  become: yes
+  become_method: sudo
+  register: output
+- debug: var=output.stdout_lines
+

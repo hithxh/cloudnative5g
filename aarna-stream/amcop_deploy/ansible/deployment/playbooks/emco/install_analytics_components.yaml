@@ -1,0 +1,23 @@
+- name: Installing CDAP
+  shell: |
+    cd {{analytics_folder}} 
+    kubectl apply -f cdap.yaml -n {{k8s_namespace}}
+  register: cdap_out
+- debug: var=cdap_out.stdout_lines
+
+- name: Installing VES
+  shell: |
+    cd {{analytics_folder}}
+    kubectl apply -f ves.yaml -n {{k8s_namespace}}
+  register: ves_out
+- debug: var=ves_out.stdout_lines
+
+- name: Installing DMAAP
+  shell: |
+    cd {{analytics_folder}}
+    helm install message_router --name dmaap --namespace {{k8s_namespace}} 
+  register: dmaap_out
+- debug: var=dmaap_out.stdout_lines
+
+- name: Sleeping for 30 seconds for the services to come up
+  wait_for: timeout=30

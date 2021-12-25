@@ -1,0 +1,7 @@
+- name: Setting up auth proxy
+  shell: |
+    cd {{istio_filter_path}}
+    kubectl apply -f emcovs.yaml -n {{k8s_namespace}}
+    kubectl apply -f emcovs_orch.yaml -n {{k8s_namespace}}
+  register: onap4k8s_out
+- debug: var=onap4k8s_out.stdout_lines

@@ -1,0 +1,16 @@
+- name: Checking if k8s folder is present
+  stat:
+     path: $HOME/{{ onap4k8s_path }}
+  register: file_output
+
+- name: Remove directory
+  file:
+    path: $HOME/{{ onap4k8s_path }}
+    state: absent
+  when: file_output.stat.exists
+
+- name: Cloning onap4k8s repo
+  git:
+    repo: "{{onap4k8s_repo}}"
+    dest: $HOME/{{ onap4k8s_path }}
+  register: output

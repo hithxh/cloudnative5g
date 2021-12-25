@@ -1,0 +1,9 @@
+{
+   "rb-name": "RESOURCE_BUNDLE_NAME",
+   "rb-version": "RESOURCE_BUNDLE_VERSION",
+   "profile-name": "PROFILE_NAME",
+   "release-name": "RELEASE_NAME",
+   "namespace": "K8S_NAMESPACE",
+   "kubernetes-version": "1.13.5"
+}
+

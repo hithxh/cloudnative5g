@@ -1,0 +1,337 @@
+{
+	"tosca_definitions_version": "controller_blueprint_0_0_1",
+	"metadata": {
+		"template_author": "Aarna Service",
+		"author_email": "aarna_services@aarnanetworks.com",
+		"user_groups": "ADMIN, OPERATION",
+		"template_name": "nrm-simulator-3gpp-mns",
+		"template_version": "1.0.0",
+		"template_tags": "netconf, config, configuration"
+	},
+	"imports": [],
+	"dsl_definitions": {
+		"nrm-config-get-schema-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"nrm-config-edit-schema-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"nrm-config-get-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		},
+		"nrm-config-edit-properties": {
+			"resolution-key": {
+				"get_input": "resolution-key"
+			}
+		}
+	},
+	"topology_template": {
+		"workflows": {
+			"nrm-config-get-schema": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "This is the workflow to get nrm-config-get NB payload schema",
+						"target": "nrm-config-get-schema-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "nrm-config-get-schema"
+					},
+					"nrm-config-get-schema-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(nrm-config-get-schema-properties).",
+						"required": true,
+						"type": "dt-nrm-config-get-schema-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["nrm-config-get-schema-api", "response-data"]
+						}
+					}
+				}
+			},
+			"nrm-config-edit-schema": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "This is the workflow to get nrm-config-edit NB payload schema",
+						"target": "nrm-config-edit-schema-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "nrm-config-edit-schema"
+					},
+					"nrm-config-edit-schema-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(nrm-config-edit-schema-properties).",
+						"required": true,
+						"type": "dt-nrm-config-edit-schema-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["nrm-config-edit-schema-api", "response-data"]
+						}
+					}
+				}
+			},
+			"nrm-config-get": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "execute netconf",
+						"target": "nrm-config-get-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "nrm-config-get"
+					},
+					"netconf-password": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-username": {
+						"required": true,
+						"type": "string"
+					},
+					"pnf-ipv4-address": {
+						"required": true,
+						"type": "string"
+					},
+					"nrm-config-get-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(nrm-config-get).",
+						"required": true,
+						"type": "dt-nrm-config-get-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "json",
+						"value": {
+							"get_attribute": ["nrm-config-get-api", "response-data"]
+						}
+					}
+				}
+			},
+			"nrm-config-edit": {
+				"steps": {
+					"imperative-workflow-step-1": {
+						"description": "execute netconf",
+						"target": "nrm-config-edit-api",
+						"activities": [{
+							"call_operation": "ComponentScriptExecutor.process"
+						}]
+					}
+				},
+				"inputs": {
+					"resolution-key": {
+						"required": false,
+						"type": "string",
+						"default": "add-nrm-rrmpolicy"
+					},
+					"netconf-password": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-username": {
+						"required": true,
+						"type": "string"
+					},
+					"pnf-ipv4-address": {
+						"required": true,
+						"type": "string"
+					},
+					"netconf-server-port": {
+						"required": true,
+						"type": "integer",
+						"default": 830
+					},
+					"nrm-config-edit-properties": {
+						"description": "Dynamic PropertyDefinition for workflow(nrm-config-edit).",
+						"required": true,
+						"type": "dt-nrm-config-edit-properties"
+					}
+				},
+				"outputs": {
+					"resolved-payload": {
+						"type": "string",
+						"value": {
+							"get_attribute": ["nrm-config-edit-api","response-data"]
+						}
+					}
+				}
+
+			}
+		},
+		"node_templates": {
+			"netconf-device": {
+				"type": "vnf-netconf-device",
+				"capabilities": {
+					"netconf": {
+						"properties": {
+							"login-key": {
+								"get_input": "netconf-password"
+							},
+							"login-account": {
+								"get_input": "netconf-username"
+							},
+							"target-ip-address": {
+								"get_input": "pnf-ipv4-address"
+							},
+							"port-number": {
+								"get_input": "netconf-server-port"
+							},
+							"connection-time-out": 5
+						}
+					}
+				}
+			},
+			"nrm-config-get-schema-api": {
+				"type": "component-script-executor",
+				"requirements": {},
+				"interfaces": {
+					"ComponentScriptExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.nrm.scripts.NrmConfigGetSchema",
+									"dynamic-properties": "*nrm-config-get-schema-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"nrm-config-get-schema-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/nrm-config-get-schema-mapping.json"
+					},
+					"nrm-config-get-schema-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/nrm-config-get-schema-template.vtl"
+					}
+				}
+			},
+			"nrm-config-edit-schema-api": {
+				"type": "component-script-executor",
+				"requirements": {},
+				"interfaces": {
+					"ComponentScriptExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.nrm.scripts.NrmConfigEditSchema",
+									"dynamic-properties": "*nrm-config-edit-schema-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"nrm-config-edit-schema-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/nrm-config-edit-schema-mapping.json"
+					},
+					"nrm-config-edit-schema-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/nrm-config-edit-schema-template.vtl"
+					}
+				}
+			},
+			"nrm-config-get-api": {
+				"type": "component-netconf-executor",
+				"requirements": {
+					"netconf-connection": {
+						"capability": "netconf",
+						"node": "netconf-device",
+						"relationship": "tosca.relationships.ConnectsTo"
+					}
+				},
+				"interfaces": {
+					"ComponentNetconfExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.nrm.scripts.NrmConfigGet",
+									"dynamic-properties": "*nrm-config-get-properties"
+								}
+							}
+						}
+					}
+				},
+				"artifacts": {
+					"nrm-config-get-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/nrm-config-get-mapping.json"
+					},
+					"nrm-config-get-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/nrm-config-get-template.vtl"
+					}
+				}
+			},
+			"nrm-config-edit-api": {
+				"type": "component-netconf-executor",
+				"requirements": {
+					"netconf-connection": {
+						"capability": "netconf",
+						"node": "netconf-device",
+						"relationship": "tosca.relationships.ConnectsTo"
+					}
+				},
+				"artifacts": {
+					"add-nrm-rrmpolicy-template": {
+						"type": "artifact-template-velocity",
+						"file": "Templates/add-nrm-rrmpolicy-template.vtl"
+					},
+					"add-nrm-rrmpolicy-mapping": {
+						"type": "artifact-mapping-resource",
+						"file": "Templates/add-nrm-rrmpolicy-mapping.json"
+					}
+				},
+				"interfaces": {
+					"ComponentNetconfExecutor": {
+						"operations": {
+							"process": {
+								"inputs": {
+									"script-type": "kotlin",
+									"script-class-reference": "com.aarna.demo.nrm.scripts.NrmConfigEdit",
+									"instance-dependencies": [],
+									"dynamic-properties": "*nrm-config-edit-properties"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

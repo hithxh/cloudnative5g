@@ -1,0 +1,14 @@
+- name: Initialize Istio operator
+  shell: |
+      cd "{{amcop_script_folder}}"
+      ./deploy_istio.sh 
+  register: opt_out
+- debug: var=opt_out.stdout_lines
+
+- name: Deploy Profile
+  shell: |
+      kubectl create ns {{istio_system}}
+      kubectl apply -f {{amcop_deployment_folder}}/playbooks/emco/deploy_istio_operator.yaml -n {{istio_system}} 
+  register: opt_out
+- debug: var=opt_out.stdout_lines
+

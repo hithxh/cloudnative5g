@@ -1,0 +1,39 @@
+---
+# SDNR_DB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdnrdb
+  labels:
+    app: sdnrdb
+spec:
+  selector:
+    app: sdnrdb
+  ports:
+  - name: {{ .Values.sdnrdb.service.portName1}}
+    port: {{ .Values.sdnrdb.service.containerPort1}}
+    protocol: TCP
+    targetPort: {{ .Values.sdnrdb.service.containerPort1}}
+  - name: {{ .Values.sdnrdb.service.portName2}}
+    port: {{ .Values.sdnrdb.service.containerPort2}}
+    protocol: TCP
+    targetPort: {{ .Values.sdnrdb.service.containerPort2}}
+---
+#SDNR service
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdnr
+  labels:
+    app: sdnr
+spec:
+  type: NodePort
+  selector:
+    app: sdnr
+  ports:
+  - name: {{ .Values.sdnr.service.portName1}}
+    port: {{ .Values.sdnr.service.targetPort1}}
+    nodePort: {{ .Values.sdnr.service.nodePort1}}
+  - name: {{ .Values.sdnr.service.portName2}}
+    port: {{ .Values.sdnr.service.targetPort2}}
+    nodePort: {{ .Values.sdnr.service.nodePort2}}

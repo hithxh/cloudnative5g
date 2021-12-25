@@ -1,0 +1,22 @@
+FROM golang:1.14.1
+
+# Set the Current Working Directory inside the container
+WORKDIR /src
+COPY ./ ./
+RUN make all
+
+# Build the Go app
+FROM amcop/emco-base:latest
+LABEL name="middleend" \
+      summary="EMCO middleend" \
+      description="EMCO middleend"
+
+WORKDIR /opt/emco
+RUN chown emco:emco /opt/emco -R && \
+    mkdir ./config
+COPY --chown=emco --from=0 /src/middleend ./
+
+COPY LICENSE /licenses/.
+
+# Command to run the executable
+CMD ["./middleend"]

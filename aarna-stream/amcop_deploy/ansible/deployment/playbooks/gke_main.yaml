@@ -1,0 +1,29 @@
+- include_tasks: gke/gke_cluster.yaml
+#- include_tasks: common/install_helm_2.yaml
+#- include_tasks: common/onap4k8s_repo.yaml
+- include_tasks: emco/include_emco_components_for_cloud.yaml
+#- include_tasks: emco/install_smo.yaml
+#
+#- name: Sleeping for 2 minutes for the services to come up
+#  wait_for: timeout=120
+
+  #- name: Expose AMCOP UI Deployment
+  #shell: |
+  #   kubectl get pods -n {{k8s_namespace}}
+  #   kubectl expose deployment emcoui --type=LoadBalancer --name=emcoui-gui -n {{k8s_namespace}}
+  #register: exp_output
+  #- debug: var=exp_output.stdout_lines
+
+  #- name: Get the external IP to access EMCO UI
+  #shell: |
+  #   EXTERNAL_IP=$(echo $(kubectl get svc -n {{k8s_namespace}} | grep emcoui-gui | awk '{ print $4 }'))
+  #   echo "IP to access the emco GUI: $EXTERNAL_IP"
+  #register: ext_output
+  #- debug: var=ext_output.stdout_lines
+
+  #- name: Setting firewall rules
+  #shell: |
+  #    cd {{anod_lite_util_script_path}}
+  #    ./setup_gke_cluster_config.sh {{anod_lite_deployment_json_path}}
+  #register: ext_output
+  #- debug: var=ext_output.stdout_lines

@@ -1,0 +1,36 @@
+# this dockerfile is created to use redhat OpenShift nginx image. doc : https://github.com/sclorg/nginx-container/blob/master/1.18/README.md
+# => Build container
+FROM node:alpine as builder
+WORKDIR /app
+COPY package.json .
+COPY package-lock.json .
+RUN npm install
+COPY src ./src
+COPY public ./public
+# => Pass the required version
+RUN REACT_APP_VERSION=v2.2 REACT_APP_PRODUCT=AMCOP npm run build
+
+# => Run container
+FROM registry.access.redhat.com/ubi8/nginx-118:latest
+
+ARG VENDOR_NAME="Aarna Networks"
+ARG CONTAINER_TAG="v2.2.0"
+
+LABEL vendor=$VENDOR_NAME \
+      version=$CONTAINER_TAG \
+      release="2.1.0" \
+      name="emcoui" \
+      summary="EMCO ui" \
+      description="EMCO ui"
+
+RUN rm -rf /opt/app-root/etc/nginx.d && \
+    ln -s /etc/nginx/conf.d /opt/app-root/etc/nginx.d
+
+COPY ./licenses/ /licenses
+
+# Nginx config
+COPY default.conf $NGINX_CONFIGURATION_PATH/
+# Static build
+COPY --from=builder /app/build /usr/share/nginx/html/
+
+CMD nginx -g "daemon off;"

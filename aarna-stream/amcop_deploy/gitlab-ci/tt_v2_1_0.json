@@ -1,0 +1,61 @@
+{
+
+ "name": "vFWapp1",
+
+ "description": "vFWService description",
+
+ "spec": {
+
+   "projectName": "vFWproject1",
+
+   "appsData": [
+
+     {
+
+       "metadata": {
+
+         "name": "packetgen",
+
+         "description": "desc of packetgen",
+
+         "filename": "packetgen.tgz"
+
+       },
+
+       "profileMetadata": {
+
+         "name": "packetgen_profile",
+
+         "filename": "profile.tar.gz"
+
+       }
+
+     },
+
+     {
+
+       "metadata": {
+
+         "name": "sink",
+
+         "description": "desc of sink",
+
+         "filename": "sink.tgz"
+
+       },
+
+       "profileMetadata": {
+
+         "name": "sink_profile",
+
+         "filename": "profile.tar.gz"
+
+       }
+
+     }
+
+   ]
+
+ }
+
+}

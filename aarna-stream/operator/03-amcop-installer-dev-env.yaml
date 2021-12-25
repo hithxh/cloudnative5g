@@ -1,0 +1,7 @@
+apiVersion: amcop.aarnanetworks.com/v1alpha1
+kind: Installer
+metadata:
+  name: default
+spec:
+  debug: enable
+  cds: enable

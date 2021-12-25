@@ -1,0 +1,19 @@
+- name: Install Go
+  shell: |
+    cd $HOME
+    curl -O https://storage.googleapis.com/golang/go1.13.5.linux-amd64.tar.gz
+    tar -xvf go1.13.5.linux-amd64.tar.gz
+  register: download_output
+- debug: var=download_output.stdout_lines
+
+- name: Set go environment
+  shell: |
+    cd $HOME    
+    sudo mv go /usr/local
+    mkdir -p go
+    sudo echo "export GOPATH=$HOME/go" >> ~/.profile
+    sudo echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin" >> ~/.profile
+    . ~/.profile
+    go version
+  register: file_output
+- debug: var=file_output.stdout_lines 

@@ -1,0 +1,18 @@
+{
+	"name": "logical-cloud-5",
+	"description": "created from curl",
+	"spec": {
+		"clusterproviders": [{
+			"metadata": {
+				"name": "provider5"
+			},
+			"spec": {
+				"clusters": [{
+					"metadata": {
+						"name": "clu5"
+					}
+				}]
+			}
+		}]
+	}
+}

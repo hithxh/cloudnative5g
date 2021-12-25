@@ -1,0 +1,30 @@
+---
+- name: Setup AMCOP on GKE
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    jump_host_ip: "{{inventory_hostname}}"
+    fileOutput: "{{ lookup('file', 'config/deployment.json') | from_json }}"
+    serverList: "{{fileOutput.clusters}}"
+
+  tasks:
+    - include_tasks: playbooks/gke_main.yaml
+  vars_files:
+    - playbooks/vars/vars.yml
+
+#- name: Deploying ONAP
+#  hosts: deployment_host
+#  gather_facts: yes
+#  vars:
+#    ansible_python_interpreter: "{{python_interpreter_path}}"
+#    jump_host_user: "{{jump_host_user}}"
+#    fileOutput: "{{ lookup('file', 'config/deployment.json') | from_json }}"
+#    oom_branch: "{{fileOutput.deployment_configs.onap_config.branch_name}}"
+#    oom_override_file: "{{override_file}}"
+
+#  tasks:
+#     - include_tasks: "playbooks/oom/oom_setup_cloud.yaml"
+#  vars_files:
+#    - playbooks/vars/vars.yml
+

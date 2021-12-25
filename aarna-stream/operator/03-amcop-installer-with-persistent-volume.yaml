@@ -1,0 +1,10 @@
+apiVersion: amcop.aarnanetworks.com/v1alpha1
+kind: Installer
+metadata:
+  name: default
+spec:
+  db:
+    persistent:
+      storageClass: amcop-local-path
+  debug: enable
+  cds: enable

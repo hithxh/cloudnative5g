@@ -1,0 +1,71 @@
+---
+# SDNR_DB Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdnrdb
+spec:
+  replicas: {{ .Values.sdnrdb.replicaCount }}
+  selector:
+    matchLabels:
+      app: sdnrdb
+  template:
+    metadata:
+      labels:
+        app: sdnrdb
+    spec:
+      containers:
+        - name: sdnrdb
+          image: {{ .Values.sdnrdb.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: "discovery.type"
+              value: "single-node"
+          ports:
+          - containerPort: {{ .Values.sdnrdb.service.containerPort1}}
+          - containerPort: {{ .Values.sdnrdb.service.containerPort2}}
+
+---
+# SDNR deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdnr
+spec:
+  replicas: {{ .Values.sdnr.replicaCount }}
+  selector:
+    matchLabels:
+      app: sdnr
+  template:
+    metadata:
+      labels:
+        app: sdnr
+    spec:
+      containers:
+        - name: sdnr
+          image: {{ .Values.sdnr.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: {{ .Values.sdnr.service.nodePort1}}
+          - containerPort: {{ .Values.sdnr.service.nodePort2}}
+          envFrom:
+            - configMapRef:
+                name: sdnr-configmap
+          volumeMounts:
+          - name: certprop
+            mountPath: /opt/opendaylight/current/certs/certs.properties
+          - name: keyszip
+            mountPath: /opt/opendaylight/current/certs/keys0.zip
+          - name: mountpointregistrar
+            mountPath: /opt/opendaylight/etc/mountpoint-registrar.properties
+            subPath: mountpoint-registrar.properties
+      volumes:
+        - name: certprop
+          configMap:
+            name: certprop
+        - name: keyszip
+          configMap:
+            name: keyszip
+        - name: mountpointregistrar
+          configMap:
+            name: mountpointregistrar

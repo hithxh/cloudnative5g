@@ -1,0 +1,31 @@
+- name: Logging into Openshift
+  shell: |
+    #!/bin/bash
+    oc login --insecure-skip-tls-verify={{opshift_oc_insecure_flag}} -u {{opshift_oc_user_name}} -p {{opshift_oc_password}} {{opshift_oc_url}}
+    oc adm policy add-scc-to-group anyuid system:authenticated
+  register: oc_login_output
+- debug: var=oc_login_output.stdout_lines
+
+- fail: msg="Login has failed. Please check the credentials and the url"
+  when: oc_login_output.stdout is search("Login failed")
+
+- name: Remove policy
+  shell: |
+      oc adm policy remove-scc-from-group anyuid system:authenticated     
+  register: pol_output
+  ignore_errors: True
+
+- name: Deleting Amcop Persistant Volume
+  shell: |
+    cd {{operator_folder}}
+    kubectl delete -f 03-amcop-installer-with-persistent-volume.yaml
+  register: cr_out
+- debug: var=cr_out.stdout_lines
+
+- name: Uninstalling Operator
+  shell: |
+    cd {{operator_folder}}/{{amcop_operator}}
+    kubectl delete -f latest.yaml
+  register: operator_out
+- debug: var=operator_out.stdout_lines
+

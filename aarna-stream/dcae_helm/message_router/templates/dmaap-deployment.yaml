@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: dmaap
+  name: dmaap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: dmaap
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/nonrtric-docker-net: "true"
+        io.kompose.service: dmaap
+    spec:
+      containers:
+      - env:
+        - name: "enableCadi"
+          value: "false"
+        - name: "PATH"
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin"
+        - name: "LANG"
+          value: "C.UTF-8"
+        - name: "JAVA_HOME"
+          value: "/usr/lib/jvm/java-1.8-openjdk"
+        - name: "JAVA_VERSION"
+          value: "8u212"
+        - name: "JAVA_ALPINE_VERSION"
+          value: "8.212.04-r0"
+        image: nexus3.onap.org:10001/onap/dmaap/dmaap-mr:1.1.18
+        imagePullPolicy: Always
+        name: dmaap-mr
+        ports:
+        - containerPort: 3904
+        - containerPort: 3905
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/localtime
+          name: localtime
+          readOnly: true
+        - mountPath: /appl/dmaapMR1/bundleconfig/etc/appprops/MsgRtrApi.properties
+          subPath: MsgRtrApi.properties
+          name: dmaap-claim0
+        - mountPath: /appl/dmaapMR1/bundleconfig/etc/logback.xml
+          subPath: logback.xml
+          name: dmaap-claim1
+        - mountPath: /appl/dmaapMR1/etc/cadi.properties
+          subPath: cadi.properties
+          name: dmaap-claim2
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: dmaap-claim0
+        configMap:
+          name: mr-api
+      - name: dmaap-claim1
+        configMap:
+          name: mr-log
+      - name: dmaap-claim2
+        configMap:
+          name: mr-cadi
+status: {}

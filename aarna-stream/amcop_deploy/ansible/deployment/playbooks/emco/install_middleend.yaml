@@ -1,0 +1,16 @@
+- name: Install Config Service.
+  shell: |
+    cd {{configsvc_path}}
+    helm install configsvc --name configsvc --namespace {{k8s_namespace}}
+  register: conf_output
+- debug: var=conf_output.stdout_lines
+
+- name: Waiting for a few seconds for the configuration service to come up
+  wait_for: timeout=30
+
+- name: Setting middleend configuration
+  shell: |
+      cd {{emco_ui_folder}}
+      helm install emcoui --name emcoui --namespace {{k8s_namespace}}
+  register: opt_out
+- debug: var=opt_out.stdout_lines

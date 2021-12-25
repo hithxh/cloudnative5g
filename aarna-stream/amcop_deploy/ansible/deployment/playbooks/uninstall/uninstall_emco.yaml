@@ -1,0 +1,9 @@
+---
+- hosts: node1
+  gather_facts: yes
+
+  tasks:
+     - include_tasks: uninstall_operator.yaml
+  vars_files:
+    - ../vars/vars.yml
+

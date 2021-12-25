@@ -1,0 +1,60 @@
+- block:
+   - name: Install helm
+     shell: |
+        curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+        chmod 700 get_helm.sh
+        sudo ./get_helm.sh -v v2.17.0
+     become: yes
+     become_method: sudo
+     register: output
+     changed_when: output.rc !=1
+  rescue:
+     - debug:
+         msg: "Helm already exists. Skipping"
+
+- name: Copy tiller account yaml
+  copy:
+    src: "{{anod_lite_folder}}/{{ tiller_account_file }}"
+    dest: "{{ tiller_account_file_dest }}"
+    mode: "755"
+    owner: "{{ansible_ssh_user}}"
+
+- block:
+   - name: Create tiller account
+     become: yes
+     shell: |
+            kubectl create -f $HOME/tiller-serviceaccount.yaml
+     register: output
+     changed_when: output.rc !=1
+  rescue:
+     - debug:
+         msg: "Tiller service account exists. Skipping"
+     - name: Delete and recreate tiller account
+       shell: |
+            kubectl delete -f $HOME/tiller-serviceaccount.yaml
+            kubectl create -f $HOME/tiller-serviceaccount.yaml
+       register: output
+
+- block:
+   - name: Restart Tiller if it is running
+     shell: |
+         pod_name=$(echo $(kubectl get pod -n kube-system | grep tiller-deploy | awk '{print $1}'))
+         kubectl delete pod "${pod_name}" -n kube-system
+     register: til_output
+  rescue: 
+     - debug:
+         msg: "Tiller does not exist. Skipping"
+
+- name: Sleep for a few seconds
+  wait_for: timeout=10
+
+- name: Init tiller
+  shell: helm init --upgrade
+  ignore_errors: yes
+
+- name: Init tiller service account
+  shell: helm init --service-account tiller --upgrade
+
+- name: Start helm local repository
+  shell: nohup helm serve > $HOME/helm_serve.log  2>&1 &
+

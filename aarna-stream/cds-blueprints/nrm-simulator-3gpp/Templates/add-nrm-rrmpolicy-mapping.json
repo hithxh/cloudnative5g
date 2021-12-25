@@ -1,0 +1,164 @@
+[
+	{
+		"name": "netconf-password",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-password",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "netconf-username",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-username",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "pnf-ipv4-address",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "pnf-ipv4-address",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "netconf-server-port",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-server-port",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "id",
+		"property": {
+			"description": "",	
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "id",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "rRMPolicyMaxRatio",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "rRMPolicyMaxRatio",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "rRMPolicyMarginMaxRatio",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "rRMPolicyMarginMaxRatio",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{	
+		"name": "rRMPolicyMinRatio",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "rRMPolicyMinRatio",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "rRMPolicyMarginMinRatio",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "rRMPolicyMarginMinRatio",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	}
+]

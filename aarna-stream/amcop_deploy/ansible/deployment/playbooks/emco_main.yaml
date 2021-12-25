@@ -1,0 +1,39 @@
+---
+# AMCOP installation on bare-metal server
+- hosts: node1
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+
+  pre_tasks:
+    - include_tasks: common/copy_kube_config.yaml
+    - include_tasks: common/cluster_status.yaml
+  tasks:
+    - include_tasks: common/install_common.yaml
+  vars_files:
+    - vars/vars.yml
+
+- hosts: all
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+
+  tasks:
+    - include_tasks: common/copy_resource_files.yaml
+    - include_tasks: common/setup_git_repo.yaml
+    - include_tasks: common/copy_required_folders.yaml
+  vars_files:
+    - vars/vars.yml
+
+- hosts: node1
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+
+  tasks:
+    - include_tasks: common/install_pre_req.yaml
+    - include_tasks: common/onap4k8s_repo.yaml
+    - include_tasks: emco/include_emco_components.yaml
+  vars_files:
+    - vars/vars.yml
+

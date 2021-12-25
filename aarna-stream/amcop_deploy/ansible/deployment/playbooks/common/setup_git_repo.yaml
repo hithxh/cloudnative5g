@@ -1,0 +1,13 @@
+- name: Checking if git folder is present
+  stat:
+     path: "$HOME/aarna-stream"
+  register: file_output
+
+# GIT repo is created under home folder. User should create a folder
+# and clone the repo for deployment
+- name: Setup GIT Repo
+  shell: |
+    cd "$HOME"
+    git clone -b "{{git_repo_branch}}" "https://{{git_repo_user}}:{{git_repo_password}}@gitlab.com/aarna-networks/aarna-stream.git"
+  register: git_rep
+  when: not file_output.stat.exists

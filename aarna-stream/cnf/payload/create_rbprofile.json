@@ -1,0 +1,9 @@
+{
+   "rb-name": "test-vfw",
+   "rb-version": "v1",
+   "profile-name": "p1",
+   "release-name": "r1",
+   "namespace": "testnamespace1",
+   "kubernetes-version": "1.13.5"
+}
+

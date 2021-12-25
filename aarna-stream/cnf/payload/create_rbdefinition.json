@@ -1,0 +1,8 @@
+{
+    "rb-name": "test-vfw",
+    "rb-version": "v1",
+    "chart-name": "firewall",
+    "description": "adding resource bundle for vfw",
+    "labels": {
+    }
+}

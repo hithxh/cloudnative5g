@@ -1,0 +1,69 @@
+- name: Clone OOM GIT Repo and Delete charts
+  shell: |
+    if [ {{oom_branch}} != "" ]
+    then
+      git clone http://gerrit.onap.org/r/oom --recurse -submodules -b {{oom_branch}}
+    else
+      git clone http://gerrit.onap.org/r/oom --recurse -submodules
+    fi
+    chown -R {{ansible_ssh_user}}:{{ansible_ssh_user}} oom
+    cd oom/kubernetes
+    cp -R ./helm/plugins/ ~/.helm
+    sudo setfacl -m user:${USER}:rw /var/run/docker.sock
+    rm -rf cds/charts/cds-command-executor/
+    rm -rf sdc/charts/sdc-dcae-be/
+    rm -rf sdc/charts/sdc-dcae-dt/
+    rm -rf sdc/charts/sdc-dcae-fe/
+    rm -rf sdc/charts/sdc-dcae-tosca-lab/
+    rm -rf sdc/charts/sdc-wfd-be/
+    rm -rf sdc/charts/sdc-wfd-fe/
+    rm -rf so/charts/so-openstack-adapter/
+    rm -rf so/charts/so-sdnc-adapter/
+    rm -rf so/charts/so-vfc-adapter/
+    rm -rf so/charts/so-vnfm-adapter/
+    rm -rf so/charts/so-ve-vnfm-adapter/
+    rm -rf multicloud/charts/multicloud-pike 
+    rm -rf multicloud/charts/multicloud-azure 
+    rm -rf multicloud/charts/multicloud-windriver 
+    rm -rf multicloud/charts/multicloud-prometheus 
+    rm -rf multicloud/charts/multicloud-vio
+    rm -rf multiccloud/charts/multicloud-fcaps
+    rm -rf multicloud/charts/multicloud-starlingx/
+
+- name: Setup local helm Repo
+  shell: helm repo add local http://127.0.0.1:8879
+
+- name: Build a local Helm repository
+  shell: cd /home/{{ansible_ssh_user}}/oom/kubernetes; make SKIP_LINT=TRUE all
+
+- name: Copy alite_oom_override.yaml file
+  copy:
+    src: "{{ oom_override_file }}"
+    dest: "{{oom_override_file_dest}}"
+    mode: "755"
+    owner: "{{ansible_ssh_user}}"
+  when: oom_override_file != ""
+
+- name: Restart Tiller
+  shell: |
+     pod_name=$(echo $(kubectl get pod -n kube-system | grep tiller-deploy | awk '{print $1}'))
+     kubectl delete pod "${pod_name}" -n kube-system
+  register: til_output
+- debug: var=til_output.stdout_lines
+
+- name: Sleep for 1 minute
+  wait_for:
+     delay: 60
+
+- name: Install helm packages
+  become: yes
+  become_method: sudo
+  shell: |
+    cd /home/{{ansible_ssh_user}}/oom/kubernetes;
+    if [ {{oom_override_file}} != "" ]
+    then
+      nohup sudo helm deploy dev local/onap -f alite_oom_override.yaml -f onap/resources/environments/public-cloud.yaml --namespace onap --set cds.enabled=true --set mariadb-galera.enabled=true --set cds.cds-blueprints-processor.dmaapEnabled=false --timeout 2000 --delay --set=global.masterPassword=onap --verbose > $HOME/helm_deploy.log 2>&1 &
+    else
+      nohup sudo helm deploy dev local/onap -f onap/resources/environments/public-cloud.yaml --namespace onap --set cds.enabled=true --set mariadb-galera.enabled=true --set cds.cds-blueprints-processor.dmaapEnabled=false --timeout 2000 --delay --set=global.masterPassword=onap --verbose > $HOME/helm_deploy.log 2>&1 & 
+    fi
+

@@ -1,0 +1,29 @@
+# Default values for a1controller.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: onap4k8s
+
+sdnrdb:
+  image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.9.3
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    containerPort1: 9200
+    portName1: port1
+    containerPort2: 9300
+    portName2: port2
+
+sdnr:
+  image: nexus3.onap.org:10001/onap/sdnc-image:2.1.3
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  odlusername: admin
+  odladminpassword: Kp8bJ4SXszM0WXlhak3eHlcse2gAw84vaoGGmJvUy2U
+  service:
+    targetPort1: 8101
+    nodePort1: 30101
+    portName1: portname1
+    targetPort2: 8181
+    nodePort2: 30181
+    portName2: portname2

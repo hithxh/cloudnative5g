@@ -1,0 +1,10 @@
+- name: Installing Operator
+  shell: |
+    cd "{{operator_folder}}/{{amcop_operator}}"
+    kubectl apply -f v2.2.0.yaml
+  register: operator_out
+- debug: var=operator_out.stdout_lines
+
+- name: Sleeping for 30 seconds for the operator to come up
+  wait_for: timeout=30
+

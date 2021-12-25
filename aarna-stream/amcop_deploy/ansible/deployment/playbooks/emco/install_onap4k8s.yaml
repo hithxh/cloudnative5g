@@ -1,0 +1,19 @@
+- name: Installing onap4k8s system - Create namespace
+  shell: |
+    kubectl create ns {{k8s_namespace}}
+  register: ist_out
+- debug: var=ist_out.stdout_lines
+
+- name: Waiting for 1 minute for the configuration to take effect
+  wait_for: timeout=60
+
+- name: Installing onap4k8s system
+  shell: |
+    cd {{emco_db_folder}}
+    kubectl apply -f onap4k8sdb.yaml -n {{k8s_namespace}}
+    kubectl apply -f onap4k8s.yaml -n {{k8s_namespace}}
+  register: onap4k8s_out
+- debug: var=onap4k8s_out.stdout_lines
+
+- name: Sleeping for 2 minutes for the services to come up
+  wait_for: timeout=120

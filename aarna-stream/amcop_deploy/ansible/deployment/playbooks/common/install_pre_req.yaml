@@ -1,0 +1,5 @@
+- include_tasks: setup_git_repo.yaml
+- include_tasks: copy_resource_files.yaml
+#- include_tasks: install_go.yaml 
+#- include_tasks: install_helm_3.yaml
+#- include_tasks: install_helm_2.yaml

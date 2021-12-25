@@ -1,0 +1,28 @@
+{
+        "actionIdentifiers": {
+                "mode": "sync",
+                "blueprintName": "vfw_netconf",
+                "blueprintVersion": "1.0.0",
+                "actionName": "stream-count-config-edit"
+        },
+        "payload": {
+                "stream-count-config-edit-request": {
+                        "stream-count-config-edit-properties": {
+                                "pnf-id": "Packet Generator",
+				"pnf-ipv4-address": "192.168.122.33",
+				"netconf-password": "admin",
+				"netconf-username": "admin",
+				"netconf-server-port": "30831",
+				"vfwEditPayload": { 
+					"active-streams": "2"  
+				}
+			}
+		}
+              
+        },
+        "commonHeader": {
+                "subRequestId": "143748f9-3cd5-4910-81c9-a4601ff2ea58",
+                "requestId": "e5eb1f1e-3386-435d-b290-d49d8af8db4c",
+                "originatorId": "SDNC_DG"
+        }
+}

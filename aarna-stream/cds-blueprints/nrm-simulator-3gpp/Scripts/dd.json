@@ -1,0 +1,218 @@
+[
+	{
+		"name": "netconf-password",
+		"tags": "netconf-password",
+		"data_type": "string",
+		"description": "netconf-password",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-password",
+			"name": "netconf-password",
+			"property": {
+				"description": "netconf-password string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "netconf-username",
+		"tags": "netconf-username",
+		"data_type": "string",
+		"description": "netconf-username",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-username",
+			"name": "netconf-username",
+			"property": {
+				"description": "netconf-username string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "netconf-server-port",
+		"tags": "netconf-server-port",
+		"data_type": "integer",
+		"description": "netconf-server-port",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-server-port",
+			"name": "netconf-server-port",
+			"property": {
+				"description": "netconf-server-port string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "pnf-ipv4-address",
+		"tags": "pnf-ipv4-address",
+		"data_type": "string",
+		"description": "pnf-ipv4-address",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "pnf-ipv4-address",
+			"name": "pnf-ipv4-address",
+			"property": {
+				"description": "pnf-ipv4-address string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "id",
+		"tags": "id",
+		"data_type": "string",
+		"description": "id nrm-rrmpolicy",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "id",
+			"name": "id",
+			"property": {
+				"description": "id string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "rRMPolicyMaxRatio",
+		"tags": "rRMPolicyMaxRatio",
+		"data_type": "integer",
+		"description": "rRMPolicyMaxRatio nrm-rrmpolicy",
+		"entry_schema": "integer",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "rRMPolicyMaxRatio",
+			"name": "rRMPolicyMaxRatio",
+			"property": {
+				"description": "rRMPolicyMaxRatio intger attribute",
+				"type": "integer"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+    		"name": "rRMPolicyMarginMaxRatio",
+		"tags": "rRMPolicyMarginMaxRatio",
+		"data_type": "integer",
+		"description": "rRMPolicyMarginMaxRatio nrm-rrmpolicy",
+		"entry_schema": "integer",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "rRMPolicyMarginMaxRatio",
+			"name": "rRMPolicyMarginMaxRatio",
+			"property": {
+				"description": "rRMPolicyMarginMaxRatio intger attribute",
+				"type": "integer"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+    		"name": "rRMPolicyMinRatio",
+		"tags": "rRMPolicyMinRatio",
+		"data_type": "integer",
+		"description": "rRMPolicyMinRatio nrm-rrmpolicy",
+		"entry_schema": "integer",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "rRMPolicyMinRatio",
+			"name": "rRMPolicyMinRatio",
+			"property": {
+				"description": "rRMPolicyMinRatio intger attribute",
+				"type": "integer"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+    		"name": "rRMPolicyMarginMinRatio",
+		"tags": "rRMPolicyMarginMinRatio",
+		"data_type": "integer",
+		"description": "rRMPolicyMarginMinRatio nrm-rrmpolicy",
+		"entry_schema": "integer",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "rRMPolicyMarginMinRatio",
+			"name": "rRMPolicyMarginMinRatio",
+			"property": {
+				"description": "rRMPolicyMarginMinRatio intger attribute",
+				"type": "integer"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}																																		                 }
+		}
+	}
+
+]

@@ -1,0 +1,16 @@
+---
+- name: Openshift Cluster reset
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    opshift_oc_user_name: "{{opshift_oc_user_name}}"
+    opshift_oc_password: "{{opshift_oc_password}}"
+    opshift_oc_url: "{{opshift_oc_url}}"
+    opshift_oc_insecure_flag: "{{opshift_oc_insecure_flag}}"
+
+  tasks:
+     - include_tasks: playbooks/uninstall/uninstall_openshift_emco.yaml
+  vars_files:
+    - playbooks/vars/vars.yml
+

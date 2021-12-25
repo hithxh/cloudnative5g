@@ -1,0 +1,8 @@
+BASE_IMGAGE_DIR=/var/lib/libvirt/images/base
+IMAGE_DIR=/var/lib/libvirt/images
+PUBLIC_KEY_PATH=~/.ssh/id_rsa.pub
+ANSIBLE_SSH_USER=ubuntu
+PYTHON_VERSION=python3
+KUBESPRAY_RELEASE_TAG=v2.12.4
+KUBE_VERSION=v1.16.8
+DOCKER_VERSION=18.06

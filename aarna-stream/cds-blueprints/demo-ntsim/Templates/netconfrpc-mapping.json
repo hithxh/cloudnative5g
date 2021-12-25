@@ -1,0 +1,92 @@
+[
+	{
+		"name": "oran-device-count",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "oran-device-count",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "netconf-password",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-password",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "netconf-username",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-username",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "ntsim-address",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "string",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "ntsim-address",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	},
+	{
+		"name": "netconf-server-port",
+		"property": {
+			"description": "",
+			"required": true,
+			"type": "integer",
+			"status": "",
+			"constraints": [{}],
+			"entry_schema": {
+				"type": ""
+			}
+		},
+		"input-param": true,
+		"dictionary-name": "netconf-server-port",
+		"dictionary-source": "input",
+		"dependencies": [],
+		"version": 0
+	}
+]

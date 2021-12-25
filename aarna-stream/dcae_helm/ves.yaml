@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vescollector
+  labels:
+    app: vescollector
+spec:
+  selector:
+    app: vescollector
+  type: NodePort
+  ports:
+  - name: http
+    port: 8080 
+    nodePort: 31080
+    protocol: TCP
+    targetPort: 8080 
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vescollector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vescollector
+  template:
+    metadata:
+      labels:
+        app: vescollector
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: vescollector
+          image: nexus3.onap.org:10001/onap/org.onap.dcaegen2.collectors.ves.vescollector:1.8.0
+          imagePullPolicy: Always
+          command: [
+                "/bin/sh",
+                "-c",
+                "bin/docker-entry.sh"
+            ]
+          ports:
+          - containerPort: 8080 
+          - containerPort: 8443 
+          env:
+                  - name: "DMAAPHOST"
+                    value: "dmaap.onap4k8s.svc.cluster.local"
+                  - name: "PATH"
+                    value: "/usr/local/openjdk-11/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                  - name : "LANG"
+                    value: "C.UTF-8"
+                  - name: "JAVA_HOME"
+                    value: "/usr/local/openjdk-11"
+                  - name: "JAVA_VERSION"
+                    value: "11.0.6"
+                  - name: "JAVA_BASE_URL"
+                    value: "https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.6%2B10/OpenJDK11U-jre_"
+                  - name: "JAVA_URL_VERSION"
+                    value: "11.0.6_10"
+                  - name: "HOSTALIASES"
+                    value: "/etc/host.aliases"
+
+

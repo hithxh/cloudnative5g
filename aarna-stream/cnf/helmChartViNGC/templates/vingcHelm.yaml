@@ -1,0 +1,4074 @@
+#---
+#apiVersion: v1
+#kind: ResourceQuota
+#metadata:
+#  name: mem-cpu-vingc
+#  namespace: {{ .Values.namespace }}
+#spec:
+#  hard:
+#    requests.cpu: "50"
+#    requests.memory: 1Gi
+#    limits.cpu: "50"
+#    limits.memory: 2Gi
+################---
+################apiVersion: v1
+################kind: Namespace
+################metadata:
+################  name: {{ .Values.namespace }}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-account
+  namespace: {{ .Values.NAME_SPACE.name }}
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: my-role
+  namespace: {{ .Values.NAME_SPACE.name }}
+rules:
+- apiGroups:
+  - "extensions"
+  - "apps"
+  - ""
+  resources:
+  - "*"
+  verbs:
+  - list
+  - get
+  - watch
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: role-binding
+  namespace: {{ .Values.NAME_SPACE.name }}
+roleRef:
+  kind: Role
+  name: my-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: service-account
+    namespace: {{ .Values.NAME_SPACE.name }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: communication-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/communication/"
+    readOnly: false
+ # nfs:
+ #  #   server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+ #   #   path: “/srv/nfs/ViNGC_Persistent”
+ #
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: communication-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: communication-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-communication
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: communication
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.communication.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: communication
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  replicas: {{ .Values.communication.replicaCount }}
+  selector:
+    matchLabels:
+      app: communication
+  template:
+    metadata:
+      labels:
+        app:  communication
+    spec:
+      volumes:
+        - name: communication-vol
+          persistentVolumeClaim:
+            claimName: communication-pvc
+      containers:
+      - name: cont-communication
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+        image: {{ .Values.communication.imageUrl }}
+        command: [ "/bin/sh", "-c", "/app/bin/commSetEnv.sh"]
+        command: [ "/bin/sh", "-c", "/app/bin/Communication"]
+        env:
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NRF_PROXY_AMF
+           value: "service-nrfproxyamf:8080"
+         - name: IS_UE_SIM_ALGO
+           value: "true"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/communication"
+             name: communication-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: ranhandler-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/ranhandler/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ranhandler-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: ranhandler-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-ranhandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: ranhandler
+#  type: ClusterIP
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  - name: ngap
+    protocol: SCTP
+    port: 38412
+    targetPort: 38412
+    nodePort: 31412
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.ranhandler.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: ranhandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  replicas: {{ .Values.ranhandler.replicaCount }}
+  selector:
+    matchLabels:
+      app: ranhandler
+  template:
+    metadata:
+      labels:
+        app:  ranhandler
+    spec:
+      volumes:
+        - name: ranhandler-vol
+          persistentVolumeClaim:
+            claimName: ranhandler-pvc
+      containers:
+      - name: cont-ranhandler
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.ranhandler.imageUrl }}
+        command: [ "/bin/sh", "-c", "/app/bin/setenv.sh"]
+        command: [ "/bin/sh", "-c", "/app/bin/RanHdlr"]
+        env:
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/ranhandler"
+             name: ranhandler-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: uehandler-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/uehandler/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: uehandler-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: uehandler-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-uehandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: uehandler
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.uehandler.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: uehandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.uehandler.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: uehandler
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: uehandler the labels field
+        app:  uehandler
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: uehandler-vol
+          persistentVolumeClaim:
+            claimName: uehandler-pvc
+      containers:
+      # container name
+      - name: cont-uehandler
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        # indicates docker repository path to pull docker image of uehandler
+        image: {{ .Values.uehandler.imageUrl }}
+
+        # commands that will be executed inside pod to run uehandler Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/UeHandler"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NRF_PROXY_AMF
+           value: "service-nrfproxyamf:8080"
+
+         - name: IS_UE_SIM
+           value: "true"
+         - name: IS_UE_SIM_ALGO
+           value: "true"
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/uehandler"
+             name: uehandler-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: sorprotection-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/sorprotection/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: sorprotection-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: sorprotection-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-sorprotection
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: sorprotection
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.sorprotection.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: sorprotection
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  replicas: {{ .Values.sorprotection.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: sorprotection
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: sorprotection the labels field
+        app:  sorprotection
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: sorprotection-vol
+          persistentVolumeClaim:
+            claimName: sorprotection-pvc
+      containers:
+      # container name
+      - name: cont-sorprotection
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        # indicates docker repository path to pull docker image of sorprotection
+        image: {{ .Values.sorprotection.imageUrl }}
+
+        # commands that will be executed inside pod to run sorprotection Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/SoRProtection"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: AUSF_NRF_PROXY_ADDRESS
+           value: "service-nrfproxyausf:8080"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/sorprotection"
+             name: sorprotection-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: ueauthentication-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/ueauthentication/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ueauthentication-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: ueauthentication-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-ueauthentication
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: ueauthentication
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+
+---
+apiVersion: apps/v1
+kind: {{ .Values.ueauthentication.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: ueauthentication
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.ueauthentication.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: ueauthentication
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: ueauthentication the labels field
+        app:  ueauthentication
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: ueauthentication-vol
+          persistentVolumeClaim:
+            claimName: ueauthentication-pvc
+      containers:
+      # container name
+      - name: cont-ueauthentication
+        # indicates docker repository path to pull docker image of ueauthentication
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.ueauthentication.imageUrl }}
+
+        # commands that will be executed inside pod to run ueauthentication Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/UEAuthentication"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: AUSF_NRF_PROXY_ADDRESS
+           value: "service-nrfproxyausf:8080"
+
+         - name: IS_UE_SIM
+           value: "true"
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/ueauthentication"
+             name: ueauthentication-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: configuration-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/configuration/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: configuration-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: configuration-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-configuration
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: configuration
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 31001
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.configuration.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: configuration
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.configuration.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: configuration
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: configuration the labels field
+        app:  configuration
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: configuration-vol
+          persistentVolumeClaim:
+            claimName: configuration-pvc
+#        - name: conf-access-mobility-config
+#          configMap:
+#             name: conf-access-mobility-config
+        - name: conf-db-config
+          configMap:
+             name: conf-db-config
+        - name: conf-http-config
+          configMap:
+             name: conf-http-config
+        - name: conf-logging
+          configMap:
+             name: conf-logging
+#        - name: conf-nw-config
+#          configMap:
+#             name: conf-nw-config
+#        - name: conf-pdu-session-config
+#          configMap:
+#             name: conf-pdu-session-config
+        - name: conf-services
+          configMap:
+             name: conf-services
+        - name: conf-timer-config
+          configMap:
+             name: conf-timer-config
+        - name: conf-timer
+          configMap:
+             name: conf-timer
+      containers:
+      # container name
+      - name: cont-configuration
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.configuration.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/Configuration"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "0.0.0.0:8080"
+          # value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/configuration"
+             name: configuration-vol
+           - name: conf-db-config
+             #mountPath: "/var/app/cfg/json/dbConfig.json"
+             mountPath: "/app/bin/json/dbConfig.json"
+             subPath: "dbConfig.json"
+           - name: conf-http-config
+             #mountPath: "/var/app/cfg/json/httpConfig.json"
+             mountPath: "/app/bin/json/httpConfig.json"
+             subPath: "httpConfig.json"
+           - name: conf-logging
+             #mountPath: "/var/app/cfg/json/logging.json"
+             mountPath: "/app/bin/json/logging.json"
+             subPath: "logging.json"
+           - name: conf-services
+             #mountPath: "/var/app/cfg/json/services.json"
+             mountPath: "/app/bin/json/services.json"
+             subPath: "services.json"
+           - name: conf-timer-config
+             #mountPath: "/var/app/cfg/json/timerConfig.json"
+             mountPath: "/app/bin/json/timerConfig.json"
+             subPath: "timerConfig.json"
+           - name: conf-timer
+             #mountPath: "/var/app/cfg/json/timer.json"
+             mountPath: "/app/bin/json/timer.json"
+             subPath: "timer.json"
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: monitoring-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/monitoring"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: monitoring-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: monitoring-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-monitoring
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: monitoring
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 31003
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.monitoring.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: monitoring
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.monitoring.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: monitoring
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: monitoring the labels field
+        app:  monitoring
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: monitoring-vol
+          persistentVolumeClaim:
+            claimName: monitoring-pvc
+      containers:
+      # container name
+      - name: cont-monitoring
+        # indicates docker repository path to pull docker image of monitoring
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.monitoring.imageUrl }}
+
+        # commands that will be executed inside pod to run monitoring Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/Monitoring"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/monitoring"
+             name: monitoring-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: statistics-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/statistics"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: statistics-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: statistics-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-statistics
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: statistics
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 31004
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.statistics.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: statistics
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.statistics.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: statistics
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: statistics the labels field
+        app:  statistics
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: statistics-vol
+          persistentVolumeClaim:
+            claimName: statistics-pvc
+      containers:
+      # container name
+      - name: cont-statistics
+        # indicates docker repository path to pull docker image of statistics
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.statistics.imageUrl }}
+
+        # commands that will be executed inside pod to run statistics Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/Statistics"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+
+         #- name: DEFAULT_CFG_PATH
+          # value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/statistics"
+             name: statistics-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: ipallocator-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/ipallocator/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ipallocator-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: ipallocator-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-ipallocator
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: ipallocator
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.ipallocator.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: ipallocator
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.ipallocator.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: ipallocator
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: ipallocator the labels field
+        app:  ipallocator
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: ipallocator-vol
+          persistentVolumeClaim:
+            claimName: ipallocator-pvc
+      containers:
+      # container name
+      - name: cont-ipallocator
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        # indicates docker repository path to pull docker image of ipallocator
+        image: {{ .Values.ipallocator.imageUrl }}
+
+        # commands that will be executed inside pod to run ipallocator Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/ipallocator.env"]
+        command: [ "/bin/sh", "-c", "/app/bin/IPAllocator"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/ipallocator"
+             name: ipallocator-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pdusession-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/pdusession/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pdusession-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: pdusession-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-pdusession
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: pdusession
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  clusterIP: {{ .Values.pdusession.cluster_ip }}
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.pdusession.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: pdusession
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.pdusession.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: pdusession
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: pdusession the labels field
+        app:  pdusession
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: pdusession-vol
+          persistentVolumeClaim:
+            claimName: pdusession-pvc
+      containers:
+      # container name
+      - name: cont-pdusession
+        # indicates docker repository path to pull docker image of pdusession
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.pdusession.imageUrl }}
+
+        # commands that will be executed inside pod to run pdusession Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/pdusession.env"]
+        command: [ "/bin/sh", "-c", "/app/bin/PDUSession"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: SMF_NRF_PROXY_ADDRESS
+           value: "service-nrfproxysmf:8080"
+         #- name: SMF_CONTEXT_DB
+         #  value: "LOCAL"
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/pdusession"
+             name: pdusession-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: timer-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/timer"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: timer-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: timer-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-timer
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: timer
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.timer.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: timer
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  serviceName: service-timer
+  replicas: {{ .Values.timer.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: timer
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: timer the labels field
+        app:  timer
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: timer-vol
+          persistentVolumeClaim:
+            claimName: timer-pvc
+      containers:
+      # container name
+      - name: cont-timer
+        # indicates docker repository path to pull docker image of timer
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.timer.imageUrl }}
+        # commands that will be executed inside pod to run timer Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/TIMER"]
+        #command: [ "/bin/sh", "-c", "sleep infinity"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: SELF_POD_NAME
+           valueFrom:
+             fieldRef:
+               fieldPath: status.podIP
+
+         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/timer"
+             name: timer-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: sdm-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/sdm/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: sdm-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: sdm-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-sdm
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: sdm
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.sdm.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: sdm
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.sdm.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: sdm
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: sdm the labels field
+        app:  sdm
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: sdm-vol
+          persistentVolumeClaim:
+            claimName: sdm-pvc
+      containers:
+      # container name
+      - name: cont-sdm
+        # indicates docker repository path to pull docker image of sdm
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.sdm.imageUrl }}
+        # commands that will be executed inside pod to run sdm Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/sdm.env"]
+        command: [ "/bin/sh", "-c", "/app/bin/SDM"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         - name: UDM_NRF_PROXY_ADDRESS
+           value: "service-nrfproxyudm:8080"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/sdm"
+             name: sdm-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: ueau-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/ueau/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ueau-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: ueau-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-ueau
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: ueau
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.ueau.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: ueau
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.ueau.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: ueau
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: ueau the labels field
+        app:  ueau
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: ueau-vol
+          persistentVolumeClaim:
+            claimName: ueau-pvc
+      containers:
+      # container name
+      - name: cont-ueau
+        # indicates docker repository path to pull docker image of ueau
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.ueau.imageUrl }}
+        # commands that will be executed inside pod to run ueau Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/UEAU"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         - name: UDM_NRF_PROXY_ADDRESS
+           value: "service-nrfproxyudm:8080"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/ueau"
+             name: ueau-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: uecm-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/uecm/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: uecm-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: uecm-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-uecm
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: uecm
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.uecm.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: uecm
+  namespace: {{ .Values.NAME_SPACE.name }}  
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.uecm.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: uecm
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: uecm the labels field
+        app:  uecm
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: uecm-vol
+          persistentVolumeClaim:
+            claimName: uecm-pvc
+      containers:
+      # container name
+      - name: cont-uecm
+        # indicates docker repository path to pull docker image of uecm
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.uecm.imageUrl }}
+
+        # commands that will be executed inside pod to run uecm Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/UECM"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         - name: UDM_NRF_PROXY_ADDRESS
+           value: "service-nrfproxyudm:8080"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/uecm"
+             name: uecm-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: datarepository-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/datarepository"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: datarepository-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: datarepository-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-datarepository
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: datarepository
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.datarepository.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: datarepository
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.datarepository.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: datarepository
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: datarepository the labels field
+        app:  datarepository
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: datarepository-vol
+          persistentVolumeClaim:
+            claimName: datarepository-pvc
+      containers:
+      # container name
+      - name: cont-datarepository
+        # indicates docker repository path to pull docker image of datarepository
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.datarepository.imageUrl }}
+        # commands that will be executed inside pod to run datarepository Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/DataRepository"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/datarepository"
+             name: datarepository-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: subdataprov-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/subdataprov"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: subdataprov-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: subdataprov-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-subdataprov
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: subdataprov
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 31002
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.subdataprov.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: subdataprov
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.subdataprov.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: subdataprov
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: subdataprov the labels field
+        app:  subdataprov
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: subdataprov-vol
+          persistentVolumeClaim:
+            claimName: subdataprov-pvc
+      containers:
+      # container name
+      - name: cont-subdataprov
+        # indicates docker repository path to pull docker image of subdataprov
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.subdataprov.imageUrl }}
+        # commands that will be executed inside pod to run subdataprov Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/SubDataProv"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/subdataprov/"
+             name: subdataprov-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: usdb-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/usdb"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: usdb-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: usdb-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-usdb
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: usdb
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.usdb.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: usdb
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.usdb.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: usdb
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: usdb the labels field
+        app:  usdb
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: usdb-vol
+          persistentVolumeClaim:
+            claimName: usdb-pvc
+      containers:
+      # container name
+      - name: cont-usdb
+        # indicates docker repository path to pull docker image of usdb
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.usdb.imageUrl }}
+        # commands that will be executed inside pod to run usdb Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/USDB"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/usdb"
+             name: usdb-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: upfcontroller-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/upfcontroller/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: upfcontroller-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: upfcontroller-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-upfcontroller
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: upfcontroller
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  - name: pfcp
+    protocol: UDP
+    port: 8805
+    targetPort: 8805
+  clusterIP: {{ .Values.upfcontroller.cluster_ip }}
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.upfcontroller.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: upfcontroller
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.upfcontroller.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: upfcontroller
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: upfcontroller the labels field
+        app:  upfcontroller
+    spec:
+      serviceAccountName: service-account
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: upfcontroller-vol
+          persistentVolumeClaim:
+            claimName: upfcontroller-pvc
+      containers:
+      # container name
+      - name: cont-upfcontroller
+        # indicates docker repository path to pull docker image of upfcontroller
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.upfcontroller.imageUrl }}
+        # commands that will be executed inside pod to run upfcontroller Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/Controller"]
+        #command: [ "/bin/sh", "-c", "sleep infinity"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: TENANT_ID
+           value: "admin"
+         - name: SERVICE_ID
+           value: "admin"
+         - name: DEPLOYMENT_FWK
+           value: "K8"
+         - name: DATAPLANE_NAMESPACE
+           value: "{{ .Values.NAME_SPACE.name }}"
+         - name: DATAPLANE_LABEL
+           value: "app=upfdataplane"
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/upfcontroller"
+             name: upfcontroller-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: upfdataplane-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/upfdataplane/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: upfdataplane-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: upfdataplane-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-upfdataplane
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: upfdataplane
+  ports:
+  - name: http
+    protocol: TCP
+    port: 9090
+    targetPort: 9090
+  - name: pfcp
+    protocol: UDP
+    port: 8805
+    targetPort: 8805
+  - name: gtp
+    protocol: UDP
+    port: 2154
+    targetPort: 2154
+  clusterIP: None 
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+
+---
+apiVersion: apps/v1
+kind: {{ .Values.upfdataplane.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: upfdataplane
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  serviceName: service-upfdataplane
+  replicas: {{ .Values.upfdataplane.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: upfdataplane
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: upfdataplane the labels field
+        app: upfdataplane
+    spec:
+      hostNetwork: false
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: upfdataplane-vol
+          persistentVolumeClaim:
+            claimName: upfdataplane-pvc
+      containers:
+      # container name
+      - name: cont-upfdataplane
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        resources: 
+          limits:
+            cpu: {{ .Values.upfdataplane.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.upfdataplane.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        # indicates docker repository path to pull docker image of upfdataplane
+        image: {{ .Values.upfdataplane.imageUrl }}
+
+        # commands that will be executed inside pod to run upfdataplane Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/DataPlane"]
+        #command: [ "/bin/sh", "-c", "sleep infinity"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: TENANT_ID
+           value: "admin"
+         - name: SERVICE_ID
+           value: "admin"
+         - name: NUM_CORE
+           value: "4"
+         - name: NUM_THREAD
+           value: "4"
+         - name: DEPLOYMENT_FWK
+           value: "K8"
+         - name: MY_POD_NAME
+           valueFrom:
+             fieldRef:
+               fieldPath: metadata.name
+         - name: MY_POD_IP
+           valueFrom:
+             fieldRef:
+               fieldPath: status.podIP
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/upfdataplane"
+             name: upfdataplane-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nfconfiguration-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nfconfiguration/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nfconfiguration-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nfconfiguration-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nfconfiguration
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nfconfiguration
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8081
+    targetPort: 8081
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nfconfiguration.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nfconfiguration
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nfconfiguration.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: nfconfiguration
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app:  nfconfiguration
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nfconfiguration-vol
+          persistentVolumeClaim:
+            claimName: nfconfiguration-pvc
+        - name: nfconf-db-config
+          configMap:
+             name: conf-db-config
+#        - name: conf-access-mobility-config
+#          configMap:
+#             name: conf-access-mobility-config
+      containers:
+      # container name
+      - name: nfcont-configuration
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nfconfiguration.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NFConfiguration"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "0.0.0.0:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: DEFAULT_CFG_PATH
+           value: "/var/app/cfg/json/"
+         - name: LICENSE_SERVER_ADDRESS
+           value: "service-licenseserver:8089"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nfconfiguration"
+             name: nfconfiguration-vol
+           - name: nfconf-db-config
+             mountPath: "/var/app/cfg/json/dbConfig.json"
+             #mountPath: "/app/bin/json/dbConfig.json"
+           #  mountPath: "../../../Configuration/json/dbConfig.json"
+             subPath: "dbConfig.json"
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nfdiscovery-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nfdiscovery/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nfdiscovery-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nfdiscovery-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nfdiscovery
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nfdiscovery 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nfdiscovery.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nfdiscovery
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nfdiscovery.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: nfdiscovery 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nfdiscovery 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nfdiscovery-vol
+          persistentVolumeClaim:
+            claimName: nfdiscovery-pvc
+      containers:
+      - name: cont-nfdiscovery
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nfdiscovery.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NFDiscovery"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+           value: "service-nfconfiguration:8081"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nfdiscovery"
+             name: nfdiscovery-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nfmanagement-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nfmanagement/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nfmanagement-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nfmanagement-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nfmanagement
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nfmanagement 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nfmanagement.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nfmanagement
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nfmanagement.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: nfmanagement 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nfmanagement 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nfmanagement-vol
+          persistentVolumeClaim:
+            claimName: nfmanagement-pvc
+      containers:
+      - name: cont-nfmanagement
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nfmanagement.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NFManagement"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+           value: "service-nfconfiguration:8081"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nfmanagement"
+             name: nfmanagement-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: idallocator-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/idallocator/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: idallocator-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: idallocator-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-idallocator
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: idallocator
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#  - name: liveliness
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.idallocator.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: idallocator
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.idallocator.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: idallocator
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: idallocator the labels field
+        app:  idallocator
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: idallocator-vol
+          persistentVolumeClaim:
+            claimName: idallocator-pvc
+      containers:
+      # container name
+      - name: cont-idallocator
+        # indicates docker repository path to pull docker image of idallocator
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.idallocator.imageUrl }}
+        # commands that will be executed inside pod to run idallocator Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/IdAllocator"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/idallocator"
+             name: idallocator-vol
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxysmf-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxysmf/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxysmf-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxysmf-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxysmf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxysmf 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxysmf 
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxysmf 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxysmf 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxysmf-vol
+          persistentVolumeClaim:
+            claimName: nrfproxysmf-pvc
+        - name: nrfproxysmfconfig
+          configMap:
+             name: nrfproxysmfconfig
+      containers:
+      - name: cont-nrfproxysmf
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxySmfConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxysmf-vol
+           - name: nrfproxysmfconfig
+             mountPath: "/app/bin/nrfProxySmfConfig.json"
+             subPath: "nrfProxySmfConfig.json"
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyupf-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyupf/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyupf-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyupf-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyupf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyupf 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyupf 
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxyupf 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxyupf 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyupf-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyupf-pvc
+        - name: nrfproxyupfconfig
+          configMap:
+             name: nrfproxyupfconfig
+      containers:
+      - name: cont-nrfproxyupf
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyUpfConfig.json"
+         - name: TENANT_ID
+           value: "admin"
+         - name: SERVICE_ID
+           value: "admin"
+         - name: SMF_SERVING_AREA
+           value: "internet"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxyupf-vol
+           - name: nrfproxyupfconfig
+             mountPath: "/app/bin/nrfProxyUpfConfig.json"
+             subPath: "nrfProxyUpfConfig.json"
+
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: upfgtpuhandler-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/upfgtpuhandler/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: upfgtpuhandler-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: upfgtpuhandler-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-upfgtpuhandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: upfgtpuhandler
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  - name: ul-gtp
+    protocol: UDP
+    port: 2152
+    targetPort: 2152
+  - name: dl-gtp
+    protocol: UDP
+    port: 2153
+    targetPort: 2153
+  externalIPs:
+  - {{ .Values.upfgtpuhandler.external_ip }}
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.upfgtpuhandler.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: upfgtpuhandler
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.upfgtpuhandler.replicaCount }}
+  selector:
+    matchLabels:
+      app: upfgtpuhandler
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: upfgtpuhandler
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: upfgtpuhandler-vol
+          persistentVolumeClaim:
+            claimName: upfgtpuhandler-pvc
+      containers:
+      - name: cont-upfgtpuhandler
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.upfgtpuhandler.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/GtpuHandler"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: TENANT_ID
+           value: "admin"
+         - name: SERVICE_ID
+           value: "admin"
+         - name: DEPLOYMENT_FWK
+           value: "K8"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/upfgtpuhandler"
+             name: upfgtpuhandler-vol
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyudm-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyudm/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyudm-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyudm-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyudm
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyudm 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyudm 
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxyudm 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxyudm 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyudm-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyudm-pvc
+        - name: nrfproxyudmconfig
+          configMap:
+             name: nrfproxyudmconfig
+      containers:
+      - name: cont-nrfproxyudm
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyUdmConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxyudm-vol
+           - name: nrfproxyudmconfig
+             mountPath: "/app/bin/nrfProxyUdmConfig.json"
+             subPath: "nrfProxyUdmConfig.json"
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyamf-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyamf/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyamf-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyamf-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyamf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyamf 
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyamf 
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxyamf 
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxyamf 
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyamf-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyamf-pvc
+        - name: nrfproxyamfconfig
+          configMap:
+             name: nrfproxyamfconfig
+      containers:
+      - name: cont-nrfproxyamf
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyAmfConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxyamf-vol
+           - name: nrfproxyamfconfig
+             mountPath: "/app/bin/nrfProxyAmfConfig.json"
+             subPath: "nrfProxyAmfConfig.json"
+#         readinessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.readiness.readiness_port }}
+#               initialDelaySeconds: {{ .Values.readiness.readiness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.readiness.readiness_periodSeconds }}
+#         livenessProbe:
+#               tcpSocket:
+#                  port: {{ .Values.liveliness.liveliness_port }}
+#               initialDelaySeconds: {{ .Values.liveliness.liveliness_initialDelaySeconds }}
+#               periodSeconds: {{ .Values.liveliness.liveliness_periodSeconds }}
+---
+#neha
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyudr-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyudr/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyudr-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyudr-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyudr
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyudr
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyudr
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      # defines how the {{ .Values.ipallocator.deploymentType }} finds which Pods to manage
+      app: nrfproxyudr
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: idallocator the labels field
+        app:  nrfproxyudr
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyudr-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyudr-pvc
+        - name: nrfproxyudrconfig
+          configMap:
+             name: nrfproxyudrconfig
+      containers:
+      # container name
+      - name: cont-nrfproxyudr
+        # indicates docker repository path to pull docker image of idallocator
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+        # commands that will be executed inside pod to run idallocator Micro service.
+       # command: [ "/bin/sh", "-c", "/app/bin/idallocator.env"]
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"         #- name: DEFAULT_CFG_PATH
+         #  value: "/var/app/cfg/json/"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyUdrConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy/"
+             name: nrfproxyudr-vol
+           - name: nrfproxyudrconfig
+             mountPath: "/app/bin/nrfProxyUdrConfig.json"
+             subPath: "nrfProxyUdrConfig.json"
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyausf-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyausf/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyausf-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyausf-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyausf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyausf
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyausf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxyausf
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxyausf
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyausf-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyausf-pvc
+        - name: nrfproxyausfconfig
+          configMap:
+             name: nrfproxyausfconfig
+      containers:
+      - name: cont-nrfproxyausf
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyAusfConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxyausf-vol
+           - name: nrfproxyausfconfig
+             mountPath: "/app/bin/nrfProxyAusfConfig.json"
+             subPath: "nrfProxyAusfConfig.json"
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nrfproxyudsf-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/nrfproxyudsf/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nrfproxyudsf-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: nrfproxyudsf-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-nrfproxyudsf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: nrfproxyudsf
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.nrfproxy.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: nrfproxyudsf
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.nrfproxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: nrfproxyudsf
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: nrfproxyudsf
+    spec:
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: nrfproxyudsf-vol
+          persistentVolumeClaim:
+            claimName: nrfproxyudsf-pvc
+        - name: nrfproxyudsfconfig
+          configMap:
+             name: nrfproxyudsfconfig
+      containers:
+      - name: cont-nrfproxyudsf
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.nrfproxy.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/NRFProxy"]
+        env:
+         # Describes enviournment variable to get the service name for Configuration Micro Service
+         - name: NFCM_NF_CFG_ADDRESS
+           value: "service-nfconfiguration:8081"
+         - name: NFCM_CFG_ADDRESS
+           value: "service-configuration:8080"
+         - name: NRFPROXY_CFG_FILE
+           value: "/app/bin/nrfProxyUdsfConfig.json"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/nrfproxy"
+             name: nrfproxyudsf-vol
+           - name: nrfproxyudsfconfig
+             mountPath: "/app/bin/nrfProxyUdsfConfig.json"
+             subPath: "nrfProxyUdsfConfig.json"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: licenseserver-pv
+  namespace: {{ .Values.NAME_SPACE.name }}
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: "{{ .Values.LOGS_MOUNT_PATH.path }}/ViNGC/licenseserver/"
+    server: {{ .Values.NFS_MOUNT_MACHINE_IP.IP }}
+    readOnly: false
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: licenseserver-pvc
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: licenseserver-pv
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Describes service name.
+  name: service-licenseserver
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  selector:
+    # field defines how the Service finds which Pods to intract with.
+    app: licenseserver
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8089
+    targetPort: 8089
+#    protocol: {{ .Values.liveliness.liveliness_protocol }}
+#    port: {{ .Values.liveliness.liveliness_port }}
+#    targetPort: {{ .Values.liveliness.liveliness_port }}
+#  - name: readiness
+#    protocol: {{ .Values.readiness.readiness_protocol }}
+#    port: {{ .Values.readiness.readiness_port }}
+#    targetPort: {{ .Values.readiness.readiness_port }}
+---
+apiVersion: apps/v1
+kind: {{ .Values.licenseserver.deploymentType }}
+metadata:
+  # Describes deployment name.
+  name: licenseserver
+  namespace: {{ .Values.NAME_SPACE.name }}
+spec:
+  # Replica count, It indicates no of pod of perticular deployment.
+  replicas: {{ .Values.licenseserver.replicaCount }}
+  selector:
+    matchLabels:
+      app: licenseserver
+  template:
+    metadata:
+      labels:
+        # Pods are labeled app: nfconfiguration the labels field
+        app: licenseserver
+    spec:
+      hostNetwork: true
+      volumes:
+        # indicates that the Pods claim mounted name.
+        - name: licenseserver-vol
+          persistentVolumeClaim:
+            claimName: licenseserver-pvc
+      containers:
+      - name: cont-licenseserver
+        # indicates docker repository path to pull docker image of configuration
+        imagePullPolicy: Always
+        resources: 
+          limits:
+            cpu: {{ .Values.resources.cpu_limit }}
+            memory: {{ .Values.resources.memory_limit }}
+          requests:
+            cpu: {{ .Values.resources.cpu_request }}
+            memory: {{ .Values.resources.memory_request }}
+
+        image: {{ .Values.licenseserver.imageUrl }}
+
+        # commands that will be executed inside pod to run configuration Micro service.
+        command: [ "/bin/sh", "-c", "/app/bin/licenseserver"]
+        env:
+         - name: LICENSE_SERVER_ADDRESS
+           value: ":8089"
+        volumeMounts:
+           # Path of pod that will be shared in mounted path.
+           - mountPath: "/var/log/licenseserver"
+             name: licenseserver-vol
+---

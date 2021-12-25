@@ -1,0 +1,16 @@
+apiVersion: operator.openshift.io/v1
+kind: Network
+spec:
+  additionalNetworks:
+  - name: unprotected-private-net
+    rawCNIConfig: '{ "cniVersion": "0.3.1", "type": "bridge", "master": "eth1", "ipam":
+      { "type": "static" }}'
+    type: Raw
+  - name: protected-private-net
+    rawCNIConfig: '{ "cniVersion": "0.3.1", "type": "bridge", "master": "eth1", "ipam":
+      { "type": "static" }}'
+    type: Raw
+  - name: onap-private-net
+    rawCNIConfig: '{ "cniVersion": "0.3.1", "type": "bridge", "master": "eth1", "ipam":
+      { "type": "static" }}'
+    type: Raw

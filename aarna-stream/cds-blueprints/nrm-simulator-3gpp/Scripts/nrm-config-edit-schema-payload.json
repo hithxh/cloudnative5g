@@ -1,0 +1,19 @@
+{
+        "actionIdentifiers": {
+                "mode": "sync",
+                "blueprintName": "nrm-simulator-3gpp-mns",
+                "blueprintVersion": "1.0.0",
+                "actionName": "nrm-config-edit-schema"
+        },
+        "payload": {
+                "nrm-config-edit-schema-request": {
+                        "nrm-config-edit-schema-properties": {
+                                							}
+                }
+        },
+        "commonHeader": {
+                "subRequestId": "143748f9-3cd5-4910-81c9-a4601ff2ea58",
+                "requestId": "e5eb1f1e-3386-435d-b290-d49d8af8db4c",
+                "originatorId": "SDNC_DG"
+        }
+}

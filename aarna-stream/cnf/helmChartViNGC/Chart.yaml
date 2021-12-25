@@ -1,0 +1,8 @@
+#yy
+apiVersion: v1
+name: ViNGC
+#Helm chart version
+version: 0.1.0
+#ViNGC Version
+appVersion: 1.0
+description: ViNGC Cluster Installation

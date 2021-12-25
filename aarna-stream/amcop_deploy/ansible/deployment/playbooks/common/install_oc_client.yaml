@@ -1,0 +1,31 @@
+- name: Create oc client directory
+  file:
+    path: $HOME/oc_client
+    state: directory
+    mode: 0775
+
+- name: Download oc client
+  shell: |
+      cd $HOME/oc_client
+      curl -L https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-client-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz | tar xz
+  register: oc_output
+  become_method: sudo
+- debug: var=oc_output.stdout_lines
+
+- name: Check if oc client is downloaded successfully
+  stat:
+     path: $HOME/oc_client/oc
+  register: file_output
+
+- name: Moving oc client to bin directory
+  shell: |
+     cd $HOME/oc_client
+     sudo mv oc kubectl /usr/local/bin
+  register: oc_output
+  become_method: sudo
+  when: file_output.stat.exists
+
+- name: Removing oc client directory
+  file:
+    state: absent
+    path: "$HOME/oc_client"

@@ -1,0 +1,14 @@
+- name: Setup NFS share on the jump host
+  shell: |
+    cd {{util_script_path}}
+    sudo bash ./master_nfs_node_centos.sh "{{anod_nfs_folder}}" "{{jumphost_ip}}" "{{cluster_ip_all}}"
+    echo "Completed setting up NFS server on the jump host"
+  become: yes
+  become_method: sudo
+  register: output
+- debug: var=output.stdout_lines
+
+- name: copy the output of the NFS share setup
+  copy:
+    content: "{{ output.stdout }}"
+    dest: "{{log_folder_path}}/nfsserver.log"

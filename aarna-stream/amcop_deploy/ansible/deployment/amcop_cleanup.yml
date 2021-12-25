@@ -1,0 +1,51 @@
+---
+- name: Uninstall AMCOP components
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+  tasks:
+     - name: Removing EMCO
+       shell: |
+         cd {{anod_lite_folder}}/undeploy
+         ./emco_uninstall.sh {{anod_lite_deployment_json_path}} {{anod_lite_log_folder}} {{ssh_private_key}} {{user_name}}
+       tags: emco
+       register: emco_ouput
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Reset Cluster
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    user_name: "{% if vm_user is defined %}{{vm_user}}{% else %}{{vm_user_name}}{% endif %}"
+  tasks:
+     - name: Removing k8s cluster
+       shell: |
+         cd {{anod_lite_folder}}/undeploy
+         ./k8s_cluster_reset.sh {{anod_lite_deployment_json_path}} {{user_name}} {{anod_lite_log_folder}}
+       tags: cluster
+       register: cls_ouput
+
+  vars_files:
+    - playbooks/vars/vars.yml
+
+- name: Delete Server
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+    serv_name: "{% if server_name is defined %}{{server_name}}{% else %}{{vm_name}}{% endif %}"
+  tasks:
+     - name: Removing Server
+       shell: |
+         cd {{anod_lite_folder}}/undeploy
+         ./cleanup.sh {{anod_lite_deployment_json_path}} {{anod_lite_log_folder}} {{serv_name}}
+       tags: vm
+       register: cl_ouput
+
+  vars_files:
+    - playbooks/vars/vars.yml

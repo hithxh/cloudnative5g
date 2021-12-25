@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: emcoovn 
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - emco-gateway
+  http:
+  - match:
+    - uri:
+        regex: 'network-controller-intents' 
+    route:
+    - destination:
+        host: ovnaction 
+        port:
+          number: 9053

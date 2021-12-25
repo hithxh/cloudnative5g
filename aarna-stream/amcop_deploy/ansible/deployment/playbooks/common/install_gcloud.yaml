@@ -1,0 +1,31 @@
+- name: Add the Cloud SDK distribution URI as a package source
+  shell: echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+  register: dis_result
+- debug: var=dis_result.stdout_lines
+
+- name: Install ca certificate  on Ubuntu
+  command: sudo apt-get install apt-transport-https ca-certificates
+  register: ubun_result
+- debug: var=ubun_result.stdout_lines
+
+- name: Import the Google Cloud public key on Ubuntu
+  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+  register: key_result
+- debug: var=key_result.stdout_lines
+
+- name: Update and install the Cloud SDK on Ubuntu
+  shell: | 
+      sudo apt-get update -y 
+      sudo apt-get install google-cloud-sdk -y
+  register: sdk_result
+- debug: var=sdk_result.stdout_lines
+
+- name: Run gcloud init to get started on Ubuntu
+  command: gcloud auth activate-service-account --key-file=$HOME/.anod/anod-guest.json
+  register: init_result
+- debug: var=init_result.stdout_lines
+
+- name: Command to set the default project on Ubuntu
+  command: gcloud config set project onap-177920
+  register: default_result
+- debug: var=default_result.stdout_lines

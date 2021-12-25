@@ -1,0 +1,121 @@
+{
+
+ "name": "vFW_dig2",
+
+ "description": "vFW dig description",
+
+ "compositeApp": "vFWapp1",
+
+ "compositeProfile":"vFW_profile",
+
+ "version":"v1",
+
+ "compositeAppVersion":"v1",
+
+ "spec": {
+
+   "projectName": "vFWproject1",
+
+   "appsData": [
+
+     {
+
+       "metadata": {
+
+         "name": "packetgen",
+
+         "description": "desc of packetgen",
+
+         "filename": "packetgen.tgz"
+
+       },
+
+       "clusters": [
+
+         {
+
+           "provider": "provider2",
+
+           "selectedClusters": [
+
+             {
+
+               "name": "clu2",
+
+               "interfaces": [
+
+                 {
+
+                   "networkName": "emco-private-net",
+
+                   "ip": "10.10.20.10",
+
+                   "subnet": "subnet1"
+
+                 }
+
+               ]
+
+             }
+
+           ]
+
+         }
+
+       ]
+
+     },
+
+     {
+
+       "metadata": {
+
+         "name": "sink",
+
+         "description": "desc of sink",
+
+         "filename": "sink.tgz"
+
+       },
+
+       "clusters": [
+
+         {
+
+           "provider": "provider2",
+
+           "selectedClusters": [
+
+             {
+
+               "name": "clu2",
+
+               "interfaces": [
+
+                 {
+
+                   "networkName": "emco-private-net",
+
+                   "ip": "10.10.20.10",
+
+                   "subnet": "subnet1"
+
+                 }
+
+               ]
+
+             }
+
+           ]
+
+         }
+
+       ]
+
+     }
+
+   ]
+
+ }
+
+}

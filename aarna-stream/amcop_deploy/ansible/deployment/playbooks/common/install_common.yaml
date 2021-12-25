@@ -1,0 +1,67 @@
+- name: install make
+  become: yes
+  become_method: sudo
+  apt:
+    name: make
+    update_cache: yes
+
+- name: Checking whether GIT is present
+  stat:
+    path: "{{ git_path }}"
+  register: result_a
+  tags: ansible
+- debug:
+    msg: "<::>Checking whether GIT is available in the HOST...<::>"
+
+- name: Install GIT, if needed
+  command: apt-get install git
+  become: yes
+  become_method: sudo
+  when: "not result_a.stat.exists"
+  tags: ansible
+
+# - name: Check if rpcbind is installed
+#   shell: dpkg-query -W -f='${Status}' rpcbind | grep 'install ok installed'
+#   register: is_rpcbind_installed
+#   failed_when: no
+#   changed_when: no
+
+- name: Install Package rpcbind
+  become: yes
+  become_method: sudo
+  apt:
+    name: rpcbind
+    state: latest
+    update_cache: yes
+
+#   when: is_rpcbind_installed.rc == 0
+# - name: Check if nfs-common is installed
+#   shell: dpkg-query -W -f='${Status}' nfs-common | grep 'install ok installed'
+#   register: is_nfs-common_installed
+#   failed_when: no
+#   changed_when: no
+
+- name: Install Package nfs-common
+  become: yes
+  become_method: sudo
+  apt:
+    name: nfs-common
+    state: latest
+    update_cache: yes
+
+  # when: is_nfs-common_installed.rc == 0
+
+- include_tasks: copy_kube_config.yaml
+
+- name: Install jq
+  shell: |
+     sudo apt-get install jq -y
+  register: dis_result
+- debug: var=dis_result.stdout_lines
+
+- name: Install zip
+  shell: |
+     sudo apt-get install zip -y
+  register: zip_result
+- debug: var=zip_result.stdout_lines
+

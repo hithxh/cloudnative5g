@@ -1,0 +1,17 @@
+- name: Setting up Keycloak 
+  shell: |
+    cd {{keycloak_path}}
+    kubectl create ns {{keycloak_namespace}}
+    helm install {{keycloak_namespace}} {{keycloak_namespace}} -n {{keycloak_namespace}}
+  register: onap4k8s_rep
+- debug: var=onap4k8s_rep.stdout_lines
+
+- name: Sleeping for 2 minutes for the keycloak services to come up
+  wait_for: timeout=120
+
+- name: Setting up required environment variables and Creating realm
+  shell: |
+     cd "{{authproxy_folder}}/keycloak"
+     ./create_realm.sh
+  register: env_rep
+- debug: var=env_rep.stdout_lines

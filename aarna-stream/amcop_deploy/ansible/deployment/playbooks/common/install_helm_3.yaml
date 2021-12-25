@@ -1,0 +1,14 @@
+- block:
+   - name: Install helm 3
+     shell: |
+        cd "$HOME"
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+        chmod 700 get_helm.sh
+        sudo ./get_helm.sh
+     become: yes
+     become_method: sudo
+     register: output
+     changed_when: output.rc !=1
+  rescue:
+     - debug:
+         msg: "Helm already exists. Skipping"

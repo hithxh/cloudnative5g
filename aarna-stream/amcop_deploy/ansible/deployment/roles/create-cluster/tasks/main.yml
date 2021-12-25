@@ -1,0 +1,12 @@
+---
+# tasks file for create-cluster
+- name: Sleeping for 3 minutes to get VM IP Address
+  wait_for: timeout=180
+
+- name: Getting Server details and creating cluster
+  shell: |
+     cd {{ anod_lite_util_script_path }}
+     ./create_cluster.sh {{anod_lite_deployment_json_path}} {{jump_host_ip}} {{anod_lite_log_folder}} {{ssh_private_key}} {{user_name}} {{serv_name}}
+  register: output
+- debug: var=output
+ 

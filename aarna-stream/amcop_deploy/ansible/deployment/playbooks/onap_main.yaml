@@ -1,0 +1,43 @@
+---
+- hosts: all
+  gather_facts: no
+  pre_tasks:
+    - include_tasks: common/copy_kube_config.yaml
+    - include_tasks: common/cluster_status.yaml
+
+  tasks:
+    - include_tasks: common/install_common.yaml
+  vars_files:
+    - vars/vars.yml
+
+#- hosts: all
+#  gather_facts: no
+#  tasks:
+#    - name: Create {{anod_nfs_folder}} dir 
+#      file:
+#        path: "{{anod_nfs_folder}}"
+#        state: directory
+#      become: yes
+#      become_method: sudo
+
+#    - name: Mount host:/{{anod_nfs_folder}} 
+#      mount:
+#        path: "{{anod_nfs_folder}}"
+#        src: "{{jumphost_ip}}:{{anod_nfs_folder}}"
+#        fstype: nfs
+#        state: mounted 
+#      become: yes
+#      become_method: sudo
+#  vars_files:
+#    - vars.yaml
+
+- name: Deploy ONAP components
+  hosts: node1
+  gather_facts: no
+  become: yes
+  become_user: "{{ansible_ssh_user}}"
+  tasks:
+    - include_tasks: common/install_helm_2.yaml
+    - include_tasks: oom/oom_setup_helm2.yaml
+  vars_files:
+    - vars/vars.yml

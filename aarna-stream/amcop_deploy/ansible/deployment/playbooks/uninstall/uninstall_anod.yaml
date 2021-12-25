@@ -1,0 +1,31 @@
+---
+- hosts: node1
+  gather_facts: yes
+
+  tasks:
+    - name: Undeploy dev
+      shell: |
+         helm undeploy dev --purge
+         set timeout 180
+      register: output
+    - debug: var=output.stdout_lines
+
+    - name: Delete ONAP namespace
+      shell: |
+         kubectl delete namespace onap
+         set timeout 180
+      register: output
+    - debug: var=output.stdout_lines
+
+    - name: Delete /dockerdata-nfs
+      shell: |
+         sudo rm -rf /dockerdata-nfs
+      register: output
+    - debug: var=output.stdout_lines
+
+    - name: Remove OOM
+      shell: |
+         sudo rm -rf $HOME/oom
+         sudo rm $HOME/helm_deploy.log
+      register: oom_ouput
+    - debug: var=oom_output.stdout_lines

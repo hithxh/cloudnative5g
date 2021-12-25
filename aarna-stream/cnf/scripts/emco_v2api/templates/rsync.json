@@ -1,0 +1,12 @@
+{
+	  "metadata": {
+		      "name": "RSYNCCTRLRNAME",
+		      "description": "description of RSYNCCTRLRNAME controller",
+		      "userData1": "user data 1 for RSYNCCTRLRNAME",
+		      "userData2": "user data 2 for RSYNCCTRLRNAME"
+		    }, 
+          "spec": {
+	 	     "host": "RSYNCCTRLRNAME",
+	            "port": 9041
+                  }
+}

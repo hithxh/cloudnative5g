@@ -1,0 +1,182 @@
+communication: 
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/communication:v1
+ 
+     
+configuration:   
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/configuration:v1
+
+
+nfconfiguration:
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/nfconfiguration:v1
+
+   
+datarepository:  
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/datarepository:v1
+
+   
+ipallocator:  
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/ipallocator:v1
+
+      
+monitoring:   
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/monitoring:v1
+
+      
+pdusession:     
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/pdusession:v1
+  cluster_ip: 172.30.10.11 
+
+    
+ranhandler:         
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/ranhdlr:v1
+
+
+sdm:            
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/sdm:v1
+
+    
+sorprotection:      
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/sorprotection:v1
+
+
+statistics:        
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/statistics:v1
+
+ 
+subdataprov:        
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/subdataprov:v1
+
+
+timer:              
+  deploymentType: StatefulSet     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/timer:v1
+
+
+ueau:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/ueau:v1
+
+
+ueauthentication:  
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/ueauthentication:v1
+
+ 
+uecm:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/uecm:v1
+
+
+uehandler:         
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/uehandler:v1
+
+ 
+upfcontroller:      
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/controller:v1
+  cluster_ip: 172.30.10.12 
+
+
+upfdataplane:       
+  deploymentType: StatefulSet     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 2 
+  cpu_limit: "4"
+  cpu_request: "4"
+  imageUrl: myregistrydomain.com:443/dataplane:v1
+  self_interface: ens3
+
+
+upfgtpuhandler:               
+  external_ip: 192.168.130.11 
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/gtpuhandler:v1
+
+usdb:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/usdb:v1
+
+
+idallocator:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/idallocator:v1
+
+
+nfdiscovery:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/nfdiscovery:v1
+
+
+nfmanagement:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/nfmanagement:v1
+
+nrfproxy:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyment
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/nrfproxy:v1
+
+licenseserver:               
+  deploymentType: Deployment     #Stateful Set , ReplicaSet and Deplopyments
+  replicaCount: 1 
+  imageUrl: myregistrydomain.com:443/licenseserver:v1
+
+NFS_MOUNT_MACHINE_IP:
+  IP: 192.168.122.1 
+# RAM limit and memory limit for each service
+resources:
+  cpu_limit: ".10"
+  cpu_request: "0.10"
+  memory_limit: "200Mi"
+  memory_request: "100Mi"
+# Readiness and Liveliness Configuration
+liveliness:
+  liveliness_port:
+  liveliness_protocol:
+  liveliness_initialDelaySeconds:
+  liveliness_periodSeconds:
+readiness:
+  readiness_port:
+  readiness_protocol:
+  readiness_initialDelaySeconds:
+  readiness_periodSeconds:
+NAME_SPACE:
+  name: ns-ngc
+LOGS_MOUNT_PATH:
+  path: /opt/NGC/
+

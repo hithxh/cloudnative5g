@@ -1,0 +1,81 @@
+#=======================================================================
+# Copyright (c) 2017-2020 Aarna Networks, Inc.
+# All rights reserved.
+# ======================================================================
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#           http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========================================================================
+# middleend config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: middleend-config
+data:
+  middleend.conf: |-
+    {
+      "ownport": "{{ .Values.middleend.service.internalPort }}",
+      "orchestrator": "orchestrator.{{ .Values.namespace }}:9015",
+      "clm": "clm.{{ .Values.namespace }}:9061",
+      "dcm": "dcm.{{ .Values.namespace }}:9077",
+      "ncm": "ncm.{{ .Values.namespace }}:9081",
+      "ovnaction": "ovnaction.{{ .Values.namespace }}:9051",
+      "configSvc": "configsvc.{{ .Values.namespace }}:9082",
+      "issuer": "{{ .Values.authproxy.issuer }}",
+      "redirect_uri": "{{ .Values.authproxy.redirect_uri }}",
+      "client_id": "{{ .Values.authproxy.client_id }}",
+      "mongo": "emco-mongo.{{ .Values.namespace }}:27017",
+      "logLevel": "{{ .Values.middleend.service.logLevel }}"
+    }
+
+---
+# emcoui config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emcoui-config
+data:
+  my-nginx-config.conf: |
+    server {
+      listen       {{ .Values.emcoui.service.internalPort }};
+      server_name  localhost;
+      location / {
+          root   /usr/share/nginx/html;
+          index  index.html;
+          try_files $uri $uri/ /index.html;
+      }
+      error_page   500 502 503 504  /50x.html;
+      location = /50x.html {
+          root   /usr/share/nginx/html;
+      }
+      location /middleend {
+          proxy_pass   http://middleend.{{ .Values.namespace }}:9051;
+      }
+      location /v2/controllers {
+          proxy_pass   http://orchestrator.{{ .Values.namespace }}:9015;
+      }
+      location /v2/projects {
+          proxy_pass   http://orchestrator.{{ .Values.namespace }}:9015;
+      }
+      location /v2/cluster-providers {
+           proxy_pass   http://clm.{{ .Values.namespace }}:9061;
+      }
+      location /v2/ovnaction {
+          rewrite ^/v2/ovnaction/(.*) /v2/projects/$1  break;
+          proxy_pass   http://ovnaction.{{ .Values.namespace }}:9053;
+      }
+      location /v2/ncm {
+          rewrite ^/v2/ncm/(.*) /v2/cluster-providers/$1  break;
+          proxy_pass   http://ncm.{{ .Values.namespace }}:9081;
+      }
+      location /v2/dcm {
+          rewrite ^/v2/dcm/(.*) /v2/$1  break;
+          proxy_pass  http://dcm.{{ .Values.namespace }}:9077;
+      }
+    }

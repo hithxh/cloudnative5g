@@ -1,0 +1,8 @@
+info:
+  version: 3.0.1
+  description: WebUI initial local configuration
+configuration:
+  mongodb:
+    name: free5gc
+    url: 'mongodb://mongodb-svc:27017'
+

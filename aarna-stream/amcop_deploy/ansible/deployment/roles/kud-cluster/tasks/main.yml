@@ -1,0 +1,12 @@
+---
+# tasks file for kud-cluster
+#
+- name: Setup KUD cluster
+  shell: |
+     cd {{ anod_lite_util_script_path }}
+     sudo ./setup_kud_cluster.sh {{anod_lite_log_folder}} {{server_name}} {{ssh_private_key}}
+  become: yes
+  become_method: sudo
+  register: output
+- debug: var=output.stdout_lines
+

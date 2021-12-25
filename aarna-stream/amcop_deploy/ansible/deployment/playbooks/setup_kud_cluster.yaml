@@ -1,0 +1,10 @@
+---
+- name: Setting up KUD Cluster
+  hosts: Kud_host
+  gather_facts: no
+  tasks:
+    - include_tasks: common/setup_git_repo.yaml
+    - include_tasks: common/kud_cluster.yaml
+  vars_files:
+    - vars/vars.yml
+

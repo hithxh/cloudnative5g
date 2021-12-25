@@ -1,0 +1,4 @@
+apiVersion: v1
+description: message router  
+name: message_router 
+version: 1.0.0

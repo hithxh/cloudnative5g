@@ -1,0 +1,56 @@
+# Copyright © 2020 Aarna Networks Inc
+# Modifications Copyright © 2018 AT&T
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+dependencies:
+  - name: mongodb
+    version: ~0.1-0
+    repository: 'file://components/mongodb'
+  - name: nrf
+    version: ~0.1-0
+    repository: 'file://components/nrf'
+  - name: amf
+    version: ~0.1-0
+    repository: 'file://components/amf'
+  - name: ausf
+    version: ~0.1-0
+    repository: 'file://components/ausf'
+  - name: mongodb
+    version: ~0.1-0
+    repository: 'file://components/mongodb'
+  - name: n3iwf
+    version: ~0.1-0
+    repository: 'file://components/n3iwf'
+  - name: nssf
+    version: ~0.1-0
+    repository: 'file://components/nssf'
+  - name: pcf
+    version: ~0.1-0
+    repository: 'file://components/pcf'
+  - name: smf
+    version: ~0.1-0
+    repository: 'file://components/smf'
+  - name: udm
+    version: ~0.1-0
+    repository: 'file://components/udm'
+  - name: udr
+    version: ~0.1-0
+    repository: 'file://components/udr'
+  - name: upf
+    version: ~0.1-0
+    repository: 'file://components/upf'
+  - name: webui
+    version: ~0.1-0
+    repository: 'file://components/webui'
+

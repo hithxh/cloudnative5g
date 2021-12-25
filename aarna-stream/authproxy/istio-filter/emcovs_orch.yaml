@@ -1,0 +1,52 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: emcoorch 
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - emco-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /v2/controllers
+    - uri:
+        prefix: /v2/projects
+    route:
+    - destination:
+        host: orchestrator 
+        port:
+          number: 9015
+  - match:
+    - uri:
+        prefix: /v2/ovnaction 
+    rewrite:    
+      uri: /v2/projects
+    route:
+    - destination:
+        host: ovnaction 
+        port:
+          number: 9051
+  - match:
+    - uri:
+        prefix: /app
+    - uri:
+        prefix: /static
+    - uri:
+        prefix: /keycloak.json
+    - uri:
+        prefix: /silent-check-sso.html
+    route:
+    - destination:
+        host: emcoui
+        port:
+          number: 9080
+  - match:
+    - uri:
+        prefix: /middleend
+    route:
+    - destination:
+        host: middleend
+        port:
+          number: 9081

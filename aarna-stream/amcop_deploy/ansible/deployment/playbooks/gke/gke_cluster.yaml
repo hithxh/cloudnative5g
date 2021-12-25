@@ -1,0 +1,41 @@
+- name: Add support to access the docker images
+  shell: |
+       gcloud auth configure-docker -q
+       rm -rf $HOME/.kube/*
+  register: doc_output
+
+- debug:
+    msg: "{{ serverList }}"
+
+- name: Creating GKE Cluster
+  shell: |
+      gcloud container clusters create "{{ item.cluster_name }}" --zone us-central1-f --enable-autoscaling --max-nodes 15 --no-enable-autoupgrade
+  register: cls_output
+  with_items: "{{ serverList }}"
+
+- debug: 
+    msg: "{{ item.stdout }}"
+  with_items: "{{ cls_output.results }}"
+
+- name: Sleeping for 2 minutes for the cluster to come up
+  wait_for: timeout=120
+
+- name: Get cluster credentials
+  shell: |
+      gcloud container clusters get-credentials "{{ item.cluster_name }}"
+  register: crd_output
+  with_items: "{{ serverList }}"
+
+- debug:
+    msg: "{{ item.stdout }}"
+  with_items: "{{ crd_output.results }}"
+
+- name: Waiting for 10 sec
+  wait_for: timeout=10
+
+- name: List all pods and nodes
+  shell: |
+      kubectl get pods --all-namespaces
+      kubectl get nodes
+  register: ls_output
+- debug: var=ls_output.stdout_lines

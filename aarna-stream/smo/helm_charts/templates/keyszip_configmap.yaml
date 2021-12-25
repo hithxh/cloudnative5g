@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: keyszip
+  labels:
+    app: sdnr
+binaryData:
+  keys0.zip: {{ .Files.Get "files/keys0.zip" | b64enc }}

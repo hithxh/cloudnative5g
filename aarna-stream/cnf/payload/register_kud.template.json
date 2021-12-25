@@ -1,0 +1,7 @@
+{
+   "cloud-region" : "CLOUD_REGION", 
+   "cloud-owner" :  "localhost",
+   "other-connectivity-list" : {
+          }
+}
+

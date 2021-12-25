@@ -1,0 +1,24 @@
+- name: Deleting Amcop Persistant Volume
+  shell: |
+    cd {{operator_folder}}
+    kubectl delete -f 03-amcop-installer-with-persistent-volume.yaml
+  register: cr_out
+- debug: var=cr_out.stdout_lines
+
+
+- name: Deleting Persistant Storage Provider
+  shell: |
+    cd {{operator_folder}}
+    kubectl delete -f 01-persistent-storage-provider.yaml
+  register: provider_out
+- debug: var=provider_out.stdout_lines
+
+
+- name: Uninstalling Operator
+  shell: |
+    cd {{operator_folder}}/{{amcop_operator}}
+    kubectl delete -f v2.2.0.yaml
+  register: operator_out
+- debug: var=operator_out.stdout_lines
+
+

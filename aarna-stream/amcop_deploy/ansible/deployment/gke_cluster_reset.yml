@@ -1,0 +1,17 @@
+---
+- name: GKE Cluster reset
+  hosts: deployment_host
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: "{{python_interpreter_path}}"
+  tasks:
+     - name: Reset Cluster
+       shell: |
+         cd {{anod_lite_util_script_path}}
+         ./delete_gke_cluster.sh {{anod_lite_deployment_json_path}} {{anod_lite_log_folder}} 
+       register: onap_ouput
+     - debug: var=onap_output.stdout_lines
+
+  vars_files:
+    - playbooks/vars/vars.yml
+

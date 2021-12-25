@@ -1,0 +1,13 @@
+info:
+  version: 3.0.1
+  description: UPF configuration
+configuration:
+  debugLevel: info
+  pfcp:
+    - addr: 192.168.2.10
+  gtpu:
+    - addr: 192.168.2.10
+  apn_list:
+    - cidr: 60.60.0.0/24
+      apn: internet
+

@@ -1,0 +1,18 @@
+# inventory_dir is an ansible internal variable. This gives the directory path 
+# from where ansible is getting executed.
+- name: copy inventory file from jump host to the deployment host
+  copy:
+    src: "{{inventory_dir}}/inventory.ini" 
+    dest: "{{anod_lite_folder}}/ansible/deployment/inventory.ini"
+
+- name: copy configuration file from jump host to the deployment host
+  copy:
+    src: "{{inventory_dir}}/config/deployment.json"
+    dest: "{{anod_lite_folder}}/ansible/deployment/config"
+
+- include_tasks: copy_required_folders.yaml
+#- name: copy SSH private key file from jump host to the deployment host
+#  copy:
+#    src: "{{ssh_priv_key}}"
+#    dest: "/home/{{jump_host_user}}/.ssh/id_rsa"
+

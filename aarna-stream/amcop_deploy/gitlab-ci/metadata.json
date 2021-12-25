@@ -1,0 +1,8 @@
+{
+    "metadata": {
+        "name": "provider-1" ,
+        "description": "Description of provider-1" ,
+        "userData1": "provider-1 user data 1" ,
+        "userData2": "provider-1 user data 2"
+    }
+}

@@ -1,0 +1,21 @@
+# sdnr Config Map
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: sdnr-configmap
+  labels:
+    app: sdnr
+data:
+  SDNC_CONFIG_DIR: "/opt/onap/ccsdk/data/properties"
+  ODL_CERT_DIR: "/opt/opendaylight/current/certs"
+  ENABLE_ODL_CLUSTER: "false"
+  SDNC_REPLICAS: "0"
+  CCSDK_REPLICAS: "0"
+  DOMAIN: ""
+  SDNRWT: "true"
+  SDNRINIT: "true"
+  SDNRONLY: "true"
+  SDNRDBURL: "http://sdnrdb.{{ .Values.namespace}}.svc.cluster.local:9200"
+  A1_ADAPTER_NORTHBOUND: "false"
+  ODL_ADMIN_PASSWORD: "{{ .Values.sdnr.odladminpassword}}"
+  JAVA_OPTS: "-Xms256m -Xmx2g"

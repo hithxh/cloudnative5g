@@ -1,0 +1,123 @@
+{
+  "spec": {
+    "projectName": "TEST8",
+    "appsData": [
+      {
+        "metadata": {
+          "name": "firewall",
+          "description": "",
+          "UserData1": "data 1",
+          "UserData2": "data2",
+          "chartContent": "",
+          "status": ""
+        },
+        "clusters": [
+          {
+            "provider": "provider-1",
+            "selectedClusters": [
+              {
+                "name": "clu-48"
+              }
+            ]
+          }
+        ],
+        "interfaces": [
+          {
+            "networkName": "emco-private-net",
+            "ip": "10.10.20.3",
+            "subnet": "subnet1"
+          }
+        ]
+      },
+      {
+        "metadata": {
+          "name": "packetgen",
+          "description": "",
+          "UserData1": "data 1",
+          "UserData2": "data2",
+          "chartContent": "",
+          "status": ""
+        },
+        "clusters": [
+          {
+            "provider": "provider-1",
+            "selectedClusters": [
+              {
+                "name": "clu-48"
+              }
+            ]
+          }
+        ],
+        "interfaces": [
+          {
+            "networkName": "emco-private-net",
+            "ip": "10.10.20.2",
+            "subnet": "subnet1"
+          }
+        ]
+      },
+      {
+        "metadata": {
+          "name": "sink",
+          "description": "",
+          "UserData1": "data 1",
+          "UserData2": "data2",
+          "chartContent": "",
+          "status": ""
+        },
+        "clusters": [
+          {
+            "provider": "provider-1",
+            "selectedClusters": [
+              {
+                "name": "clu-48"
+              }
+            ]
+          }
+        ],
+        "interfaces": [
+          {
+            "networkName": "emco-private-net",
+            "ip": "10.10.20.4",
+            "subnet": "subnet1"
+          }
+        ]
+      }
+    ]
+  },
+  "name": "vfw1_1",
+  "description": "",
+  "compositeProfile": "vFW1_profile",
+  "version": "v1",
+  "logicalCloudData": [
+    {
+      "metadata": {
+        "name": "lc2",
+        "description": "Cluster references for lc2"
+      },
+      "spec": {
+        "clusterProviders": [
+          {
+            "metadata": {
+              "name": "provider-1",
+              "description": "cluster providerprovider-1"
+            },
+            "spec": {
+              "clusters": [
+                {
+                  "metadata": {
+                    "name": "clu-48",
+                    "description": "Clusterclu-48"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "compositeApp": "vFW1",
+  "compositeAppVersion": "v1",
+  "logicalCloud": "lc2"
+}

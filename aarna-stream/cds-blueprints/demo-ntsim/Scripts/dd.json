@@ -1,0 +1,126 @@
+[
+	{
+		"name": "netconf-password",
+		"tags": "netconf-password",
+		"data_type": "string",
+		"description": "netconf-password",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-password",
+			"name": "netconf-password",
+			"property": {
+				"description": "netconf-password string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "netconf-username",
+		"tags": "netconf-username",
+		"data_type": "string",
+		"description": "netconf-username",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-username",
+			"name": "netconf-username",
+			"property": {
+				"description": "netconf-username string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "netconf-server-port",
+		"tags": "netconf-server-port",
+		"data_type": "integer",
+		"description": "netconf-server-port",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "netconf-server-port",
+			"name": "netconf-server-port",
+			"property": {
+				"description": "netconf-server-port string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "oran-device-count",
+		"tags": "oran-device-count",
+		"data_type": "integer",
+		"description": "oran-device-count",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "oran-device-count",
+			"name": "oran-device-count",
+			"property": {
+				"description": "oran-device-count string attribute",
+				"type": "integer"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-default",
+					"properties": {}
+				},
+				"default": {
+					"type": "source-default",
+					"properties": {}
+				}
+			}
+		}
+	},
+	{
+		"name": "ntsim-address",
+		"tags": "ntsim-address",
+		"data_type": "string",
+		"description": "ntsim-address",
+		"entry_schema": "string",
+		"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+		"updatedBy": "Aarna service <aarna_services@aarnanetworks.com>",
+		"definition": {
+			"tags": "ntsim-address",
+			"name": "ntsim-address",
+			"property": {
+				"description": "ntsim-address string attribute",
+				"type": "string"
+			},
+			"updated-by": "Aarna service <aarna_services@aarnanetworks.com>",
+			"sources": {
+				"input": {
+					"type": "source-input",
+					"properties": {}
+				}
+			}
+		}
+	}
+]

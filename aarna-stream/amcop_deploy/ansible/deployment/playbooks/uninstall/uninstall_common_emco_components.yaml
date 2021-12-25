@@ -1,0 +1,94 @@
+- name: Remove onap4k8s db
+  shell: |
+     cd {{emco_db_folder}}
+     kubectl delete -f onap4k8sdb.yaml -n {{k8s_namespace}}
+     kubectl delete -f onap4k8s.yaml -n {{k8s_namespace}}
+  register: db_ouput
+- debug: var=db_output.stdout_lines
+
+- name: Uninstall emcoui and middleend
+  shell: |
+      helm del --purge emcoui
+  register: mid_ouput
+
+- name: Uninstall CDAP and VES
+  shell: |
+     cd {{analytics_folder}}
+     kubectl delete -f cdap.yaml -n {{k8s_namespace}}
+     kubectl delete -f ves.yaml -n {{k8s_namespace}}
+  register: ves_ouput
+
+- name: Uninstall Config Service
+  shell: |
+      helm del --purge configsvc
+  register: configsvc_ouput
+
+- name: Uninstall DMAAP
+  shell: |
+      helm del --purge dmaap
+  register: dmaap_ouput
+
+- name: Uninstall SMO
+  shell: |
+      helm del --purge sdnr
+  register: smo_ouput
+
+
+- name: Uninstall Helm 2
+  file:
+    state: absent
+    path: "/usr/local/bin/helm"
+  register: hlm_ouput
+  become: yes
+  become_method: sudo
+
+- name: Delete all namespaces
+  shell: |
+     kubectl delete ns {{k8s_namespace}}
+  register: del_ouput
+
+- name: Remove Tiller
+  shell: |
+      kubectl delete -f "$HOME/tiller-serviceaccount.yaml"
+  register: tiller_ouput
+- debug: var=tiller_output.stdout_lines
+
+- name: Delete onap4k8s repo
+  file:
+    state: absent
+    path: "$HOME/{{onap4k8s_path}}"
+  register: hlm_ouput
+  become: yes
+  become_method: sudo
+
+- name: Delete kube config file
+  file:
+    state: absent
+    path: "$HOME/.kube"
+  register: hlm_ouput
+  become: yes
+  become_method: sudo
+
+- name: Delete aarna-stream directory
+  file:
+    state: absent
+    path: "$HOME/aarna-stream"
+  register: aar_ouput
+  become: yes
+  become_method: sudo
+
+- name: Delete helm script file
+  file:
+    state: absent
+    path: "$HOME/get_helm.sh"
+  register: hsc_ouput
+  become: yes
+  become_method: sudo
+
+- name: Delete helm log
+  file:
+    state: absent
+    path: "$HOME/helm_serve.log"
+  register: serv_ouput
+  become: yes
+  become_method: sudo

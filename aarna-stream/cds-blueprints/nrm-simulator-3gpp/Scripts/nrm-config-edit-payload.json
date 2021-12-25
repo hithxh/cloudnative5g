@@ -1,0 +1,29 @@
+{
+        "actionIdentifiers": {
+                "mode": "sync",
+                "blueprintName": "nrm-simulator-3gpp-mns",
+                "blueprintVersion": "1.0.0",
+                "actionName": "nrm-config-edit"
+        },
+        "payload": {
+                "nrm-config-edit-request": {
+                        "nrm-config-edit-properties": {
+				"pnf-id": "abcd",
+				"pnf-ipv4-address": "192.168.122.147",
+				"netconf-password": "netconf",
+				"netconf-username": "netconf",
+				"netconf-server-port": "30830",
+				"id": "xyz02",
+				"rRMPolicyMaxRatio": 20,
+				"rRMPolicyMarginMaxRatio": 30,
+				"rRMPolicyMinRatio": 40,
+				"rRMPolicyMarginMinRatio": 50
+			}
+                }
+        },
+        "commonHeader": {
+                "subRequestId": "143748f9-3cd5-4910-81c9-a4601ff2ea58",
+                "requestId": "e5eb1f1e-3386-435d-b290-d49d8af8db4c",
+                "originatorId": "SDNC_DG"
+        }
+}

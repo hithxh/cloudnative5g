@@ -1,0 +1,18 @@
+{
+	"name": "lc1",
+	"description": "created from curl",
+	"spec": {
+		"clusterproviders": [{
+			"metadata": {
+				"name": "provider-1"
+			},
+			"spec": {
+				"clusters": [{
+					"metadata": {
+						"name": "clu-48"
+					}
+				}]
+			}
+		}]
+	}
+}

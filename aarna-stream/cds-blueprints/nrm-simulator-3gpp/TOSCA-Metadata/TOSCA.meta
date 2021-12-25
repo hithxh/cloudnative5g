@@ -1,0 +1,7 @@
+TOSCA-Meta-File-Version: 0.0.1
+CSAR-Version: 1.0
+Created-By: Aarna Services
+Entry-Definitions: Definitions/nrm-simulator-3gpp-mns.json
+Template-Name: nrm-simulator-3gpp-mns
+Template-Version: 1.0.0
+Template-Tags: nrm-simulator-3gpp-mns
